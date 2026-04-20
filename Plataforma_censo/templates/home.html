@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plataforma SIG Data Comunal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #93c0e9; /* NUEVO FONDO */
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Círculos decorativos (opcional, no los toqué) */
+    .circle-1, .circle-2 {
+      position: absolute;
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .circle-1 {
+      width: 250px;
+  height: 250px;
+      background: linear-gradient(130deg,
+              rgba(77,73,191,.8),
+              rgba(255,255,255,.2));
+  border-radius: 50%;
+      
+      left: 5%;
+    top: 12%;
+    }
+
+    .circle-2 {
+      width: 250px;
+  height: 250px;
+      background: linear-gradient(130deg,
+              rgba(242, 33, 5, 0.8),
+              rgba(255,255,255,.2));
+      right: 8%;
+    bottom: 15%;
+    }
+
+    /* CONTENEDOR PRINCIPAL AJUSTADO */
+    .container {
+        
+      max-width: 980px !important; /* NUEVO tamaño ideal */
+      width: 100%;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* NUEVO CARD CONTAINER */
+    .card__container {
+    position: relative;
+    overflow: hidden;
+    padding: 3rem 0;
+    background-color: var(--body-color);
+
+      display: grid;
+      align-content: center;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0rem; /* NUEVA separación */
+      width: 96%;
+      height: 100vh; /* Pediste altura completa */
+      justify-items: center;
+      
+    }
+
+    /* TARJETAS */
+    .card {
+      background: linear-gradient(130deg, #fbfbfe99, #fbfbfe33); /* NUEVO GRADIENTE */
+      border-radius: 1.5rem;
+      padding: 2rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      width: 100%;
+      max-width: 280px;
+      height: 420px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      backdrop-filter: blur(4px);
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .card__image {
+      width: 190px;
+      height: 150px;
+      object-fit: contain;
+      margin: 0 auto 1.2rem;
+    }
+
+    .card__title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #1C1C22;
+      margin-bottom: 0.5rem;
+    }
+
+    .card__subtitle {
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+    }
+
+    .card__button {
+      display: inline-block;
+      background-color: #ffffffaa;
+      color: #1C1C22;
+      padding: 0.8rem 1.8rem;
+      border-radius: 0.6rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: background-color 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .card__button:hover {
+      background-color: #ffffffcc;
+    }
+
+    /* Móvil */
+    @media (max-width: 900px) {
+      .card__container {
+        grid-template-columns: repeat(2, 1fr);
+        height: auto;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .card__container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="circle-1"></div>
+  <div class="circle-2"></div>
+
+  <div class="container">
+    <div class="card__container">
+
+      <!-- Censo -->
+      <a href="{% url 'censo:panel' %}" class="card">
+        <img src="https://img.genially.com/5f0bae4c3ef16f3976db6be3/97338ce6-f960-4993-a1fb-9b21b7f2311c.png" class="card__image">
+        <h3 class="card__title">Censo</h3>
+        <p class="card__subtitle">Datos censales por OMZ, SB, UV y comuna.</p>
+        <span class="card__button">Ir acá</span>
+      </a>
+
+      <!-- RSH -->
+      <a href="{% url 'rsh:panel' %}" class="card">
+        <img src="https://departamentosig.munivalpo.cl/media/assets/imagen_sig/None/adjunto_vc3NVmc.png" class="card__image">
+        <h3 class="card__title">RSH</h3>
+        <p class="card__subtitle">Información del Registro Social de Hogares.</p>
+        <span class="card__button">Ir acá</span>
+      </a>
+
+      <!-- Catastro -->
+      <a href="https://geoportal-sistema-de-informacion-geografica-munivalpo.hub.arcgis.com/" class="card">
+        <img src="https://departamentosig.munivalpo.cl/media/assets/imagen_sig/None/adjunto_oxQdPhF.png" class="card__image">
+        <h3 class="card__title">Geoportal Valparaíso</h3>
+        <p class="card__subtitle"></p>
+        <span class="card__button">Ir acá</span>
+      </a>
+
+    </div>
+  </div>
+
+</body>
+</html>

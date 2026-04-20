@@ -1,0 +1,1909 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel RSH</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+  <style>
+  body {
+      background: linear-gradient(130deg, #05dbf2aa 0%, #4d49bfdd 100%);
+      background-attachment: fixed;
+      font-family: 'Segoe UI', sans-serif;
+      color: #2e2e2e;
+      padding-top: 25px;
+  }
+
+  .col-md-3 {
+      flex: 0 0 480px !important;
+      max-width: 480px !important;
+  }
+
+  .sidebar {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 40px 35px;
+      border: 1px solid #d9e1ee;
+      box-shadow: 0px 6px 20px rgba(0,0,0,0.12);
+  }
+
+  .sidebar > * {
+      margin-bottom: 25px;
+  }
+
+  .top-buttons button {
+      flex: 1;
+      font-size: 17px;
+      padding: 12px 0;
+      border-radius: 10px !important;
+      font-weight: 600;
+  }
+
+  .btn-modo-active {
+      background-color: #2563eb !important;
+      border-color: #1d4ed8 !important;
+      color: white !important;
+      box-shadow: 0px 0px 10px rgba(37,99,235,0.55);
+  }
+
+  #label-principal {
+      font-size: 22px !important;
+      font-weight: 700 !important;
+      color: #1d4ed8 !important;
+      margin-bottom: 12px !important;
+      display: block;
+  }
+
+  .accordion-button {
+      font-size: 17px;
+      padding: 16px 18px;
+      font-weight: 600;
+  }
+
+  .accordion-body {
+      padding: 22px 25px !important;
+      font-size: 16px;
+  }
+
+  .content-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 35px;
+      border: 1px solid #d9e3ef;
+      box-shadow: 0px 6px 20px rgba(0,0,0,0.08);
+  }
+
+  thead th {
+      background: #e7efff !important;
+      color: #1e40af !important;
+      font-weight: 700;
+      font-size: 15px;
+  }
+
+  tbody td {
+      font-size: 15px;
+      padding: 10px 14px;
+  }
+
+  tbody tr:hover {
+      background: #e5f1ff !important;
+  }
+
+  .logo-header {
+      width: 100%;
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: center;
+      position: relative;
+  }
+
+  .logo-sig {
+      width: 330px;
+      height: auto;
+  }
+
+  .volver-btn {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 8px 14px;
+      font-size: 16px;
+      border-radius: 10px;
+      opacity: 0.95;
+  }
+
+  .link-accion {
+      font-size: 13px;
+      cursor: pointer;
+      color: #0d6efd;
+      text-decoration: underline;
+  }
+
+  .accordion-header .link-accion {
+    display: none;
+    
+}
+
+/* Cuando el accordion está abierto → mostrar los botones */
+.accordion-item .accordion-collapse.show ~ .accordion-header .link-accion,
+.accordion-item .accordion-header button:not(.collapsed) ~ .link-accion {
+    display: inline-block !important;
+}
+.grupo-acciones .link-accion {
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: #eef4ff; /* Fondo celeste muy claro */
+    border: 1px solid #cdd7f5; /* Marco azul suave */
+    font-size: 13px;
+    cursor: pointer;
+    color: #000000; /* Letras negras (por defecto) */
+    text-decoration: none; /* Asegura que no haya subrayado */
+    transition: background 0.2s, color 0.2s, border-color 0.2s; /* Transición suave para el hover */
+}
+
+.grupo-acciones .link-accion:hover {
+    background: #dbe7ff; /* Fondo celeste más oscuro al pasar el cursor */
+}
+
+.grupo-acciones .link-accion-azul {
+    /* Fondo blanco y letras azules */
+    background: #ffffff; /* Fondo blanco */
+    color: #0044cc; /* Letras azules */
+    border: 1px solid #0044cc; /* Marco azul */
+}
+
+/* Hover para el estilo "Azul con Fondo Blanco" */
+.grupo-acciones .link-accion-azul:hover {
+    /* Cambio a fondo azul y letras blancas al acercarse */
+    background: #0044cc; /* Fondo azul */
+    color: #ffffff; /* Letras blancas */
+    border-color: #0044cc; /* Mantiene el marco azul */
+}
+
+/* Estado de "deselección" (Marco Rojo) para el estilo base */
+.grupo-acciones .link-accion.deseleccionado {
+    border: 1px solid #ff0000; /* Marco rojo */
+    background: #ffffff; /* Fondo blanco (si aplica) */
+    color: #000000; /* Letras negras (si aplica) */
+}
+
+/* Hover para el estado de "deselección" con marco rojo */
+.grupo-acciones .link-accion.deseleccionado:hover {
+    /* Cambia a fondo rojo y letras blancas al acercarse */
+    background: #ff0000; /* Fondo rojo */
+    color: #ffffff; /* Letras blancas */
+    border-color: #ff0000; /* Marco también rojo */
+}
+  </style>
+</head>
+
+<body class="p-3">
+
+<!-- LOGO SUPERIOR -->
+<div class="logo-header">
+    <a href="/" class="btn btn-sm btn-outline-light volver-btn">&larr; Volver</a>
+    <img src="https://departamentosig.munivalpo.cl/media/assets/imagen_sig/None/adjunto_2PDGoCX.png"
+         alt="Logo SIG" class="logo-sig">
+</div>
+
+
+<div class="container-fluid">
+  <div class="row g-3">
+
+    <!-- SIDEBAR -->
+    <div class="col-md-3">
+      <div class="sidebar">
+
+        <!-- BOTONES SUPERIORES -->
+        <div class="d-flex gap-2 mb-3 top-buttons">
+          <button id="btn-uv"  class="btn btn-outline-info" onclick="setModo('uv')">UV</button>
+          <button id="btn-sb"  class="btn btn-outline-warning" onclick="setModo('sb')">SB</button>
+          <button id="btn-omz" class="btn btn-outline-primary" onclick="setModo('omz')">OMZ</button>
+          <button id="btn-cm"  class="btn btn-outline-dark" onclick="setModo('cm')">CM</button>
+        </div>
+
+        <label id="label-principal">Filtros por UV</label>
+
+        <!-- =============================
+             UVEC AUTOCOMPLETE
+        ============================== -->
+        <div id="uv-wrapper">
+          <label>Buscar UVEC:</label>
+          <input id="uv-search" class="form-control" placeholder="Ej: 104, 123...">
+          <div id="uv-suggestions"
+               class="list-group"
+               style="display:none; position:absolute; z-index:999;">
+          </div>
+          <div id="uv-selected" class="mt-2 small"></div>
+        </div>
+
+        <!-- =============================
+             SB (LISTA CHECKBOX)
+        ============================== -->
+        <div id="sb-busqueda-wrapper" style="display:none;">
+  
+  <div class="accordion" id="acordeon-sb">
+    <div class="accordion-item">
+
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button"
+                data-bs-toggle="collapse" data-bs-target="#sb-panel">
+          Seleccionar Sectores Barriales
+        </button>
+      </h2>
+
+      <div id="sb-panel" class="accordion-collapse collapse" 
+           data-bs-parent="#acordeon-sb">
+        <div class="accordion-body p-2" 
+             style="max-height:250px; overflow-y:auto;">
+          <div id="sb-checkboxes"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="sb-selected" class="mt-2 small"></div>
+</div>
+
+        <!-- =============================
+             OMZ (LISTA CHECKBOX)
+        ============================== -->
+        <div id="omz-busqueda-wrapper" style="display:none;">
+  
+  <div class="accordion" id="acordeon-omz">
+    <div class="accordion-item">
+
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button"
+                data-bs-toggle="collapse" data-bs-target="#omz-panel">
+          Seleccionar OMZ
+        </button>
+      </h2>
+
+      <div id="omz-panel" class="accordion-collapse collapse"
+           data-bs-parent="#acordeon-omz">
+        <div class="accordion-body p-2"
+             style="max-height:250px; overflow-y:auto;">
+          <div id="omz-checkboxes"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="omz-selected" class="mt-2 small"></div>
+</div>
+
+
+        <!-- =============================
+             CATEGORÍA
+        ============================== -->
+        <div class="mt-3">
+          <label>Categoría:</label>
+          <select id="categoria" class="form-select">
+            <option value="habitante">Habitante</option>
+            <option value="vivienda">Vivienda</option>
+            <option value="educacion">Educación</option>
+            <option value="salud">Salud</option>
+            <option value="ocupacion">Ocupación</option>
+          </select>
+        </div>
+
+        <!-- FILTROS DINÁMICOS -->
+        <div id="contenedor-filtros-categoria" class="mt-3"></div>
+
+        <!-- BOTÓN APLICAR -->
+        <button id="btn-aplicar" class="btn w-100 btn-primary mt-3">Aplicar Filtros</button>
+
+      </div>
+    </div>
+
+    <!-- =============================
+         RESULTADOS
+    ============================== -->
+    <div class="col-md-9">
+      <div class="content-card shadow-sm">
+
+        <div class="d-flex justify-content-between mb-3">
+          <h4></h4>
+          <button id="btn-exportar" class="btn btn-outline-primary btn-sm">Exportar CSV</button>
+        </div>
+
+        <div class="table-responsive" style="max-height:70vh;">
+          <table class="table table-bordered table-striped" id="tabla-resultados">
+            <thead><tr id="tabla-head"></tr></thead>
+            <tbody id="tabla-body"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+/* ======================================================
+   ESTADO GLOBAL
+====================================================== */
+  
+let modo = "uv";
+let uvLista = [];
+let uvSeleccionadas = [];
+let omzLista = [];
+let omzSeleccionados = [];
+
+
+/* ==========================================================
+   📌 MODO (UV / SB / OMZ / CM) – por ahora sólo UV tiene filtros
+   ========================================================== */
+function setModo(m) {
+    modo = m;
+    limpiarTabla(); // ← limpia todo al cambiar de UV/SB/OMZ/CM
+    document.querySelectorAll(".top-buttons button")
+        .forEach(btn => btn.classList.remove("btn-modo-active"));
+
+    const btn = document.getElementById(`btn-${m}`);
+    if (btn) btn.classList.add("btn-modo-active");
+
+    const label = {
+        uv: "Filtros por UV",
+        sb: "Filtros por Sector Barrial",
+        omz: "Filtros por OMZ",
+        cm: "Filtros Comunales"
+    }[m] || "Filtros RSH";
+
+    document.getElementById("label-principal").textContent = label;
+    document.getElementById("omz-busqueda-wrapper").style.display = (modo === "omz") ? "block" : "none";
+    // Mostrar / ocultar buscadores
+    document.getElementById("uv-search").parentElement.style.display =
+        (modo === "uv") ? "block" : "none";
+
+    document.getElementById("sb-busqueda-wrapper").style.display =
+        (modo === "sb") ? "block" : "none";
+
+    // 🟡 Cuando entro a SB, lleno el SELECT
+    if (m === "sb") {
+        cargarSBSelector();
+    }
+
+    if (m === "omz") {
+    cargarOMZSelector();
+}
+
+    cargarFiltrosCategoria();
+}
+
+
+/* ==========================================================
+   📌 CARGAR UVEC DESDE /censo/api/uv/
+   ========================================================== */
+async function cargarUVEC() {
+    try {
+        const res = await fetch("/censo/api/uv/");
+        uvLista = await res.json();
+    } catch (e) {
+        console.error("Error cargando UVEC:", e);
+    }
+}
+let sbLista = [];
+let sbSeleccionados = [];
+
+async function cargarSB() {
+    try {
+        const res = await fetch("/censo/api/sb/");
+        sbLista = await res.json();
+    } catch(e) {
+        console.error("Error cargando SB:", e);
+    }
+}
+
+async function cargarOMZ() {
+    try {
+        const res = await fetch("/censo/api/omz/");
+        omzLista = await res.json();
+    } catch(e) {
+        console.error("Error cargando OMZ:", e);
+    }
+}
+
+function cargarOMZSelector() {
+    const cont = document.getElementById("omz-checkboxes");
+    if (!cont) return;
+
+    cont.innerHTML = "<p class='text-muted small'>Cargando...</p>";
+
+    if (!omzLista.length) {
+        cont.innerHTML = "<p class='text-muted small'>Sin datos OMZ.</p>";
+        return;
+    }
+
+    cont.innerHTML = omzLista.map(o => `
+        <div class="form-check mb-1">
+            <input class="form-check-input omz-check" 
+                   type="checkbox"
+                   value="${o.id}"
+                   data-nombre="${o.nombre}">
+            <label class="form-check-label">
+                ${o.nombre}
+            </label>
+        </div>
+    `).join("");
+
+    // Manejar selección
+    document.querySelectorAll(".omz-check").forEach(ch => {
+        ch.addEventListener("change", () => {
+            actualizarOMZSeleccionados();
+        });
+    });
+}
+
+function actualizarOMZSeleccionados() {
+    omzSeleccionados = [];
+
+    document.querySelectorAll(".omz-check:checked").forEach(ch => {
+        omzSeleccionados.push({
+            id: parseInt(ch.value),
+            nombre: ch.getAttribute("data-nombre")
+        });
+    });
+
+    renderOMZSeleccionados();
+}
+function actualizarSBSeleccionados() {
+    sbSeleccionados = [];
+
+    document.querySelectorAll(".sb-check:checked").forEach(ch => {
+        sbSeleccionados.push({
+            id: parseInt(ch.value),
+            nombre: ch.getAttribute("data-nombre")
+        });
+    });
+
+    console.log("SB seleccionados:", sbSeleccionados);
+}
+function cargarSBSelector() {
+    const cont = document.getElementById("sb-checkboxes");
+    if (!cont) return;
+
+    cont.innerHTML = "<p class='text-muted small'>Cargando...</p>";
+
+    if (!sbLista.length) {
+        cont.innerHTML = "<p class='text-muted small'>Sin datos SB.</p>";
+        return;
+    }
+
+    // Generar checkboxes
+    cont.innerHTML = sbLista.map(sb => `
+        <div class="form-check mb-1">
+            <input class="form-check-input sb-check" 
+                   type="checkbox"
+                   value="${sb.id}"
+                   data-nombre="${sb.nombre}">
+            <label class="form-check-label">
+                ${sb.nombre}
+            </label>
+        </div>
+    `).join("");
+
+    // Manejar selección
+    document.querySelectorAll(".sb-check").forEach(ch => {
+        ch.addEventListener("change", () => {
+            actualizarSBSeleccionados();
+        });
+    });
+}
+const sbSelect = document.getElementById("sb-select");
+
+if (sbSelect) {
+    sbSelect.addEventListener("change", (e) => {
+        const id = parseInt(e.target.value);
+        if (!id) return;
+
+        const sb = sbLista.find(s => s.id === id);
+        if (!sb) return;
+
+        agregarSB(sb.id, sb.nombre);   // ya la tienes definida
+        e.target.value = "";           // vuelve a "Seleccione..."
+    });
+}
+const uvSearch = document.getElementById("uv-search");
+const uvSuggestions = document.getElementById("uv-suggestions");
+
+uvSearch.addEventListener("input", e => {
+    const txt = e.target.value.trim().toLowerCase();
+    uvSuggestions.innerHTML = "";
+
+    if (txt.length < 1) {
+        uvSuggestions.style.display = "none";
+        return;
+    }
+
+    const filtradas = uvLista.filter(uv =>
+        (uv.cod_uv || "").toLowerCase().includes(txt) ||
+        (uv.nombre || "").toLowerCase().includes(txt)
+    ).slice(0, 15);
+
+    if (!filtradas.length) {
+        uvSuggestions.style.display = "none";
+        return;
+    }
+
+    filtradas.forEach(uv => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "list-group-item list-group-item-action";
+        btn.textContent = `${uv.cod_uv} ${uv.nombre ?? ""}`;
+        btn.onclick = () => {
+            agregarUVEC(uv.cod_uv, uv.nombre ?? "");
+            uvSearch.value = "";
+            uvSuggestions.innerHTML = "";
+            uvSuggestions.style.display = "none";
+        };
+        uvSuggestions.appendChild(btn);
+    });
+
+    uvSuggestions.style.display = "block";
+});
+
+document.addEventListener("click", e => {
+    if (!uvSuggestions.contains(e.target) && e.target !== uvSearch) {
+        uvSuggestions.style.display = "none";
+    }
+});
+
+function agregarUVEC(cod, nombre) {
+    if (!uvSeleccionadas.find(u => u.cod === cod)) {
+        uvSeleccionadas.push({ cod, nombre });
+    }
+    renderUVECSeleccionadas();
+}
+
+function eliminarUVEC(cod) {
+    uvSeleccionadas = uvSeleccionadas.filter(u => u.cod !== cod);
+    renderUVECSeleccionadas();
+}
+
+function renderUVECSeleccionadas() {
+    const cont = document.getElementById("uv-selected");
+    cont.innerHTML = "";
+
+    uvSeleccionadas.forEach(u => {
+        cont.innerHTML += `
+            <span class="badge bg-primary me-1 mb-1">
+                ${u.cod} ${u.nombre}
+                <span onclick="eliminarUVEC('${u.cod}')" style="cursor:pointer; margin-left:4px;">&times;</span>
+            </span>
+        `;
+    });
+}
+const sbSearch = document.getElementById("sb-search");
+const sbSuggestions = document.getElementById("sb-suggestions");
+
+
+
+function agregarSB(id, nombre) {
+    if (!sbSeleccionados.find(s => s.id === id)) {
+        sbSeleccionados.push({ id, nombre });
+    }
+    renderSBSeleccionados();
+}
+
+function eliminarSB(id) {
+    sbSeleccionados = sbSeleccionados.filter(s => s.id !== id);
+    renderSBSeleccionados();
+}
+
+
+
+/* ==========================================================
+   📌 FILTROS POR CATEGORÍA
+   ========================================================== */
+document.getElementById("categoria").addEventListener("change", cargarFiltrosCategoria);
+
+function cargarFiltrosCategoria() {
+    document.querySelectorAll(".filtro-rsh").forEach(ch => ch.remove());
+    const categoria = document.getElementById("categoria").value;
+    const cont = document.getElementById("contenedor-filtros-categoria");
+
+    // ---------------- HABITANTE ----------------
+    if (categoria === "habitante") {
+    cont.innerHTML = `
+    <div class="accordion" id="ac-filtros-habitante">
+
+      <!-- SOCIODEMOGRÁFICO -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#cp-socio">
+            Relación Sociodemográfica
+          </button>
+        </h2>
+
+        <div id="cp-socio" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-habitante">
+          <div class="accordion-body">
+
+            <!-- 🔥 BOTONES ABAJO DEL TÍTULO -->
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="socio">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="socio">Quitar todo</span>
+            </div>
+
+            <!-- CONTENIDOS -->
+            <h6 class="fw-bold">Cantidad de Habitantes</h6>
+            <div class="form-check mb-2">
+              <input class="form-check-input filtro-rsh"
+                     type="checkbox" data-field="socio" value="habitantes_total">
+              <label class="form-check-label">Total de Habitantes</label>
+            </div>
+
+            <h6 class="fw-bold mt-3">Sexo</h6>
+            <div class="form-check mb-1">
+              <input class="form-check-input filtro-rsh"
+                     type="checkbox" data-field="socio" value="sexo_1">
+              <label class="form-check-label">Masculino</label>
+            </div>
+            <div class="form-check mb-1">
+              <input class="form-check-input filtro-rsh"
+                     type="checkbox" data-field="socio" value="sexo_2">
+              <label class="form-check-label">Femenino</label>
+            </div>
+
+            <h6 class="fw-bold mt-3">Nacionalidad</h6>
+            <div class="form-check mb-1">
+              <input class="form-check-input filtro-rsh"
+                     type="checkbox" data-field="socio" value="nacionalidad_1">
+              <label class="form-check-label">Chilena</label>
+            </div>
+            <div class="form-check mb-1">
+              <input class="form-check-input filtro-rsh"
+                     type="checkbox" data-field="socio" value="nacionalidad_2">
+              <label class="form-check-label">Extranjera</label>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- PARENTESCO -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#cp-parentesco">
+            Relación Familiar (Parentesco)
+          </button>
+        </h2>
+
+        <div id="cp-parentesco" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-habitante">
+          <div class="accordion-body">
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="parentescoid">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="parentescoid">Quitar todo</span>
+            </div>
+
+            ${generarChecksParentesco()}
+          </div>
+        </div>
+      </div>
+
+      <!-- INDIGENA -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#cp-indigena">
+            Pertenencia a Pueblo Indígena
+          </button>
+        </h2>
+
+        <div id="cp-indigena" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-habitante">
+          <div class="accordion-body">
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="indigena">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="indigena">Quitar todo</span>
+            </div>
+
+            ${generarChecksIndigena()}
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAMO -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#cp-tramo">
+            Tramo
+          </button>
+        </h2>
+
+        <div id="cp-tramo" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-habitante">
+          <div class="accordion-body">
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="tramo">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="tramo">Quitar todo</span>
+            </div>
+
+            ${generarChecksTramo()}
+          </div>
+        </div>
+      </div>
+
+    </div>`;
+}
+
+else if (categoria === "vivienda") {
+    cont.innerHTML = `
+    <div class="accordion" id="ac-filtros-vivienda">
+
+      <!-- V1 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-v1">
+            Tipo de vivienda
+          </button>
+        </h2>
+
+        <div id="cp-v1" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-vivienda">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="v1">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="v1">Quitar todo</span>
+            </div>
+
+            ${generarChecksV1()}
+          </div>
+        </div>
+      </div>
+
+      <!-- V2 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-v2">
+            Situación de ocupación del sitio
+          </button>
+        </h2>
+
+        <div id="cp-v2" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-vivienda">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="v2">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="v2">Quitar todo</span>
+            </div>
+
+            ${generarChecksV2()}
+          </div>
+        </div>
+      </div>
+
+      <!-- V4 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-v4">
+            Fuente de agua
+          </button>
+        </h2>
+
+        <div id="cp-v4" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-vivienda">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="v4">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="v4">Quitar todo</span>
+            </div>
+
+            ${generarChecksV4()}
+          </div>
+        </div>
+      </div>
+
+    </div>`;
+}
+
+else if (categoria === "educacion") {
+    cont.innerHTML = `
+    <div class="accordion" id="ac-filtros-educacion">
+
+      <!-- E1 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-e1">
+            Asistencia a establecimiento educacional
+          </button>
+        </h2>
+
+        <div id="cp-e1" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-educacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="e1">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="e1">Quitar todo</span>
+            </div>
+
+            ${generarChecksE1()}
+          </div>
+        </div>
+      </div>
+
+      <!-- E2 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-e2">
+            Razón de no asistencia
+          </button>
+        </h2>
+
+        <div id="cp-e2" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-educacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="e2">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="e2">Quitar todo</span>
+            </div>
+
+            ${generarChecksE2()}
+          </div>
+        </div>
+      </div>
+
+      <!-- E3 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-e3">
+            Tipo de educación alcanzada
+          </button>
+        </h2>
+
+        <div id="cp-e3" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-educacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="e3">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="e3">Quitar todo</span>
+            </div>
+
+            ${generarChecksE3()}
+          </div>
+        </div>
+      </div>
+
+    </div>`;
+}
+
+else if (categoria === "salud") {
+    cont.innerHTML = `
+    <div class="accordion" id="ac-salud">
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-s1">
+            Condiciones de salud
+          </button>
+        </h2>
+
+        <div id="cp-s1" class="accordion-collapse collapse" data-bs-parent="#ac-salud">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="salud">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="salud">Quitar todo</span>
+            </div>
+
+            ${generarChecksSalud()}
+          </div>
+        </div>
+      </div>
+
+    </div>`;
+}
+
+else if (categoria === "ocupacion") {
+    cont.innerHTML = `
+    <div class="accordion" id="ac-filtros-ocupacion">
+
+      <!-- O1 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-o1">
+            Condición de actividad (¿está trabajando?)
+          </button>
+        </h2>
+
+        <div id="cp-o1" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-ocupacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="o1">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="o1">Quitar todo</span>
+            </div>
+
+            ${generarChecksO1()}
+          </div>
+        </div>
+      </div>
+
+      <!-- O2 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-o2">
+            Ocupación actual
+          </button>
+        </h2>
+
+        <div id="cp-o2" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-ocupacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="o2">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="o2">Quitar todo</span>
+            </div>
+
+            ${generarChecksO2()}
+          </div>
+        </div>
+      </div>
+
+      <!-- O3 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-o3">
+            Rama de actividad económica
+          </button>
+        </h2>
+
+        <div id="cp-o3" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-ocupacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="o3">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="o3">Quitar todo</span>
+            </div>
+
+            ${generarChecksO3()}
+          </div>
+        </div>
+      </div>
+
+      <!-- O4 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-o4">
+            Tipo de ocupación
+          </button>
+        </h2>
+
+        <div id="cp-o4" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-ocupacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="o4">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="o4">Quitar todo</span>
+            </div>
+
+            ${generarChecksO4()}
+          </div>
+        </div>
+      </div>
+
+      <!-- O5 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-o5">
+            ¿Tiene contrato de trabajo?
+          </button>
+        </h2>
+
+        <div id="cp-o5" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-ocupacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="o5">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="o5">Quitar todo</span>
+            </div>
+
+            ${generarChecksO5()}
+          </div>
+        </div>
+      </div>
+
+      <!-- O6 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-o6">
+            Tipo de relación contractual
+          </button>
+        </h2>
+
+        <div id="cp-o6" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-ocupacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="o6">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="o6">Quitar todo</span>
+            </div>
+
+            ${generarChecksO6()}
+          </div>
+        </div>
+      </div>
+
+      <!-- O7 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-o7">
+            Horas trabajadas a la semana
+          </button>
+        </h2>
+
+        <div id="cp-o7" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-ocupacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="o7">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="o7">Quitar todo</span>
+            </div>
+
+            ${generarChecksO7()}
+          </div>
+        </div>
+      </div>
+
+      <!-- O8 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-o8">
+            Búsqueda de trabajo (últimos 2 meses)
+          </button>
+        </h2>
+
+        <div id="cp-o8" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-ocupacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="o8">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="o8">Quitar todo</span>
+            </div>
+
+            ${generarChecksO8()}
+          </div>
+        </div>
+      </div>
+
+      <!-- O9 -->
+      <div class="accordion-item mt-2">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#cp-o9">
+            Razón por la que no buscó trabajo
+          </button>
+        </h2>
+
+        <div id="cp-o9" class="accordion-collapse collapse" data-bs-parent="#ac-filtros-ocupacion">
+          <div class="accordion-body">
+
+            <div class="d-flex justify-content-end gap-3 mb-3 grupo-acciones">
+              <span class="link-accion" data-accion="select" data-group="o9">Marcar todo</span>
+              <span class="link-accion" data-accion="unselect" data-group="o9">Quitar todo</span>
+            </div>
+
+            ${generarChecksO9()}
+          </div>
+        </div>
+      </div>
+
+    </div>`;
+}
+
+    else {
+        cont.innerHTML = "<p class='text-muted'>Próximamente filtros para esta categoría.</p>";
+    }
+
+    // Enlaces seleccionar/deseleccionar grupo (común a todas las categorías)
+    cont.querySelectorAll(".link-accion").forEach(el => {
+        el.addEventListener("click", () => {
+            const group = el.getAttribute("data-group");
+            const accion = el.getAttribute("data-accion");
+            const checks = cont.querySelectorAll(`.filtro-rsh[data-field="${group}"]`);
+            checks.forEach(ch => ch.checked = (accion === "select"));
+        });
+    });
+}
+
+/* ------- Generadores HABITANTE ------- */
+function generarChecksParentesco() {
+    const opciones = [
+        [1, "Jefe(a) de Hogar"],
+        [2, "Cónyuge o pareja"],
+        [3, "Hijo(a) de ambos"],
+        [4, "Hijo(a) sólo del jefe(a) de hogar"],
+        [5, "Hijo(a) sólo del cónyuge o pareja"],
+        [6, "Padre o madre"],
+        [7, "Suegro o Suegra"],
+        [8, "Yerno o nuera"],
+        [9, "Nieto(a)"],
+        [10,"Hermano(a)"],
+        [11,"Cuñado(a)"],
+        [12,"Otro familiar"],
+        [13,"No familiar"]
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+            <input class="form-check-input filtro-rsh" type="checkbox"
+                   data-field="parentescoid" value="${val}">
+            <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+function generarChecksSalud() {
+    const opciones = [
+        ["s1a", "Ceguera o dificultad visual"],
+        ["s1b", "Sordera o dificultad auditiva"],
+        ["s1c", "Mudez o dificultad en el habla"],
+        ["s1d", "Dificultad física y/o movilidad"],
+        ["s1e", "Problemas mentales"],
+        ["s1f", "Problemas psiquiátricos"],
+
+        ["s2a", "Puede salir solo(a)"],
+        ["s2b", "Puede hacer compras o ir al médico solo(a)"],
+        ["s2c", "Puede bañarse/comer solo(a)"],
+        ["s2d", "Puede moverse dentro de la casa solo(a)"],
+        ["s2e", "Control total de esfínteres"],
+    ];
+
+    return opciones.map(([campo, label]) => `
+        <div class="form-check mb-1">
+            <input class="form-check-input filtro-rsh" 
+                   type="checkbox"
+                   data-field="salud"
+                   value="${campo}">
+            <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+function generarChecksIndigena() {
+    const opciones = [
+        [0, "No pertenece"],
+        [1, "Aimara"],
+        [2, "Rapa-Nui"],
+        [3, "Quechua"],
+        [4, "Mapuche"],
+        [5, "Atacameño"],
+        [6, "Coyas"],
+        [7, "Kawésqar"],
+        [8, "Yagán"],
+        [9, "Diaguita"],
+        [10,"Changos"]
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+            <input class="form-check-input filtro-rsh" type="checkbox"
+                   data-field="indigena" value="${val}">
+            <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksTramo() {
+    const opciones = [40,50,60,70,80,90,100];
+    return opciones.map(val => `
+        <div class="form-check mb-1">
+            <input class="form-check-input filtro-rsh" type="checkbox"
+                   data-field="tramo" value="${val}">
+            <label class="form-check-label">${val}%</label>
+        </div>
+    `).join("");
+}
+
+/* ------- Generadores VIVIENDA ------- */
+function generarChecksV1() {
+    const opciones = [
+        [1, "Casa"],
+        [2, "Departamento"],
+        [3, "Pieza dentro de la vivienda"],
+        [4, "Mejora / mediagua"],
+        [5, "Rancho / ruca / choza"],
+        [6, "Vivienda de materiales precarios"],
+        [7, "Otro tipo de vivienda"],
+        [8, "Hospedería"],
+        [9, "Caleta / punto de calle"],
+        [10,"Vivienda colectiva"],
+        [11,"Residencial / pensión"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+            <input class="form-check-input filtro-rsh" type="checkbox"
+                   data-field="v1" value="${val}">
+            <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksV2() {
+    const opciones = [
+        [1, "Propio pagado o pagándose"],
+        [2, "Arrendado"],
+        [3, "Cedido / uso gratuito"],
+        [4, "Usufructo"],
+        [5, "Ocupación irregular"],
+        [6, "Poseedor irregular"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+            <input class="form-check-input filtro-rsh" type="checkbox"
+                   data-field="v2" value="${val}">
+            <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksV4() {
+    const opciones = [
+        [1, "Red pública con medidor propio"],
+        [2, "Red pública con medidor compartido"],
+        [3, "Red pública sin medidor"],
+        [4, "Pozo o noria"],
+        [5, "Río / vertiente / estero"],
+        [6, "Otra fuente no potable"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+            <input class="form-check-input filtro-rsh" type="checkbox"
+                   data-field="v4" value="${val}">
+            <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+/* ------- Generadores EDUCACION ------- */
+function generarChecksE1() {
+    const opciones = [
+        [1, "Sí asiste regularmente"],
+        [2, "No asiste"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+            <input class="form-check-input filtro-rsh" type="checkbox"
+                   data-field="e1" value="${val}">
+            <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksE2() {
+    const opciones = [
+        [1, "No lo considera necesario"],
+        [2, "Problemas de acceso (oferta)"],
+        [3, "Problemas de traslado"],
+        [4, "Problemas económicos"],
+        [5, "Quehaceres del hogar / cuidado"],
+        [6, "Embarazo / maternidad / paternidad"],
+        [7, "Enfermedad que lo(a) inhabilita"],
+        [8, "Problemas familiares"],
+        [9, "No le interesa"],
+        [10,"Está trabajando"],
+        [11,"Terminó de estudiar"],
+        [12,"Otra razón"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+            <input class="form-check-input filtro-rsh" type="checkbox"
+                   data-field="e2" value="${val}">
+            <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksE3() {
+    const opciones = [
+        [1, "Ninguno"],
+        [2, "Educación Parvularia"],
+        [3, "Educación Básica"],
+        [4, "Preparatoria (sistema antiguo)"],
+        [5, "Media Científico-Humanista"],
+        [6, "Media Técnico-Profesional"],
+        [7, "Humanidades (sistema antiguo)"],
+        [8, "Técnica Comercial / Industrial / Normalista (antiguo)"],
+        [9, "CFT Incompleta"],
+        [10,"CFT Completa"],
+        [11,"IP Incompleta"],
+        [12,"IP Completa"],
+        [13,"Universitaria Incompleta"],
+        [14,"Universitaria Completa"],
+        [15,"Postgrado"],
+        [16,"Educación Especial / Diferencial"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+            <input class="form-check-input filtro-rsh" type="checkbox"
+                   data-field="e3" value="${val}">
+            <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+function generarChecksO1() {
+    const opciones = [
+        [1, "Sí, está trabajando"],
+        [2, "No está trabajando"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+          <input class="form-check-input filtro-rsh" type="checkbox"
+                 data-field="o1" value="${val}">
+          <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksO2() {
+    const opciones = [
+        [1, "Patrón o empleador"],
+        [2, "Trabajador por cuenta propia"],
+        [3, "Empleado u obrero"],
+        [4, "Familiar no remunerado"],
+        [5, "Servicio doméstico"],
+        [6, "Fuerzas Armadas y de Orden"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+          <input class="form-check-input filtro-rsh" type="checkbox"
+                 data-field="o2" value="${val}">
+          <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksO3() {
+    const opciones = [
+        [1, "Agricultura, ganadería, caza y silvicultura"],
+        [2, "Explotación de minas y canteras"],
+        [3, "Industrias manufactureras"],
+        [4, "Electricidad, gas y agua"],
+        [5, "Construcción"],
+        [6, "Comercio, restaurantes y hoteles"],
+        [7, "Transporte y comunicaciones"],
+        [8, "Establecimientos financieros y seguros"],
+        [9, "Servicios comunales y sociales"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+          <input class="form-check-input filtro-rsh" type="checkbox"
+                 data-field="o3" value="${val}">
+          <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksO4() {
+    const opciones = [
+        [1, "Permanente"],
+        [2, "De temporada o estacional"],
+        [3, "Ocasional o eventual"],
+        [4, "A prueba"],
+        [5, "Por plazo o tiempo determinado"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+          <input class="form-check-input filtro-rsh" type="checkbox"
+                 data-field="o4" value="${val}">
+          <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksO5() {
+    const opciones = [
+        [1, "Sí, tiene contrato de trabajo"],
+        [2, "No tiene contrato de trabajo"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+          <input class="form-check-input filtro-rsh" type="checkbox"
+                 data-field="o5" value="${val}">
+          <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksO6() {
+    const opciones = [
+        [1, "Plazo indefinido"],
+        [2, "Plazo fijo"],
+        [3, "Por obra, faena o servicio"],
+        [4, "De aprendizaje"],
+        [5, "No corresponde"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+          <input class="form-check-input filtro-rsh" type="checkbox"
+                 data-field="o6" value="${val}">
+          <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksO7() {
+    const opciones = [
+        [1, "Menos de 20 horas"],
+        [2, "20 a 39 horas"],
+        [3, "40 a 48 horas"],
+        [4, "Más de 48 horas"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+          <input class="form-check-input filtro-rsh" type="checkbox"
+                 data-field="o7" value="${val}">
+          <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksO8() {
+    const opciones = [
+        [1, "Sí, buscó trabajo remunerado"],
+        [2, "No buscó trabajo remunerado"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+          <input class="form-check-input filtro-rsh" type="checkbox"
+                 data-field="o8" value="${val}">
+          <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+function generarChecksO9() {
+    const opciones = [
+        [1, "Quehaceres del hogar"],
+        [2, "No tiene con quién dejar a los niños"],
+        [3, "Enfermedad crónica o invalidez"],
+        [4, "Cuida a un enfermo crónico o postrado"],
+        [5, "Estudiante"],
+        [6, "Jubilado/a, pensionado/a"],
+        [7, "Rentista"],
+        [8, "Se aburrió de buscar"],
+        [9, "No tiene interés"],
+        [10, "Otra razón"],
+    ];
+    return opciones.map(([val, label]) => `
+        <div class="form-check mb-1">
+          <input class="form-check-input filtro-rsh" type="checkbox"
+                 data-field="o9" value="${val}">
+          <label class="form-check-label">${label}</label>
+        </div>
+    `).join("");
+}
+
+
+/* ==========================================================
+   📌 APLICAR FILTROS → LLAMAR /rsh/api/consulta/
+   ========================================================== */
+document.getElementById("btn-aplicar").addEventListener("click", async () => {
+
+    // 1️⃣ Validación dependiente del modo
+    if (modo === "uv") {
+        if (!uvSeleccionadas.length) {
+            alert("Debe seleccionar al menos una UVEC.");
+            return;
+        }
+    }
+
+    if (modo === "sb") {
+        if (!sbSeleccionados.length) {
+            alert("Debe seleccionar al menos un Sector Barrial.");
+            return;
+        }
+    }
+
+    if (modo === "omz") {
+        if (!omzSeleccionados.length) {   // si usas variable diferente, cámbiala
+            alert("Debe seleccionar al menos una OMZ.");
+            return;
+        }
+    }
+
+    // 2️⃣ Al menos un filtro seleccionado
+    const hayFiltros = document.querySelectorAll(".filtro-rsh:checked").length > 0;
+    if (!hayFiltros) {
+        alert("Debe seleccionar al menos un filtro.");
+        return;
+    }
+
+    // 3️⃣ Construir filtros
+    const categoria = document.getElementById("categoria").value;
+    const filtros = {};
+
+    document.querySelectorAll(".filtro-rsh:checked").forEach(ch => {
+        const field = ch.getAttribute("data-field");
+        const raw = ch.value;
+
+        const val = isNaN(parseInt(raw)) ? raw : parseInt(raw);
+
+        if (!filtros[field]) filtros[field] = [];
+        filtros[field].push(val);
+    });
+
+    // 4️⃣ Construir body dinámico
+    const body = {
+        uvec: (modo === "uv") ? uvSeleccionadas.map(u => u.cod) : [],
+        sb:   (modo === "sb") ? sbSeleccionados.map(s => s.id) : [],
+        omz:  (modo === "omz") ? omzSeleccionados.map(o => o.id) : [],
+        categoria,
+        filtros
+    };
+
+    // 5️⃣ Ejecutar API
+    try {
+
+    // 🔥 LIMPIAR SB Y OMZ PARA EVITAR CADENAS VACÍAS
+    body.sb = (body.sb || [])
+                .filter(x => x !== "" && x !== null && !isNaN(x))
+                .map(Number);
+
+    body.omz = (body.omz || [])
+                .filter(x => x !== "" && x !== null && !isNaN(x))
+                .map(Number);
+
+    const res = await fetch("/rsh/api/consulta/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+    renderTabla(data);
+
+} catch (e) {
+    console.error("Error consultando API RSH:", e);
+    alert("Ocurrió un error al consultar los datos RSH.");
+}
+});
+/* ==========================================================
+   📌 RENDER TABLA
+   ========================================================== */
+function renderTabla(data) {
+    const thead = document.getElementById("tabla-head");
+    const tbody = document.getElementById("tabla-body");
+
+    thead.innerHTML = "";
+    tbody.innerHTML = "";
+
+    if (!data || !data.length) {
+        thead.innerHTML = "<th>Sin resultados</th>";
+        return;
+    }
+
+    const fila = data[0];
+
+    const definiciones = [
+        // Total
+        { key: "total",          label: "Total personas" },
+          // ----- HABITANTE: SOCIODEMOGRÁFICO -----
+    { key: "habitantes_total", label: "Total de Habitantes" },
+    { key: "sexo_m",           label: "Hombres" },
+    { key: "sexo_f",           label: "Mujeres" },
+    { key: "nacionalidad_ch",  label: "Chilenos" },
+    { key: "nacionalidad_ex",  label: "Extranjeros" },
+
+        // ----- HABITANTE: parentesco -----
+        { key: "jefe_hogar",     label: "Jefes(as) de hogar" },
+        { key: "conyuge_pareja", label: "Cónyuges / Pareja" },
+        { key: "hijo_ambos",     label: "Hijos(as) de ambos" },
+        { key: "hijo_solo_jefe", label: "Hijos(as) sólo del jefe(a)" },
+        { key: "hijo_solo_conyuge", label: "Hijos(as) sólo del cónyuge" },
+        { key: "padre_madre",    label: "Padres / Madres" },
+        { key: "suegro_suegra",  label: "Suegros(as)" },
+        { key: "yerno_nuera",    label: "Yernos / Nueras" },
+        { key: "nieto",          label: "Nietos(as)" },
+        { key: "hermano",        label: "Hermanos(as)" },
+        { key: "cunado",         label: "Cuñados(as)" },
+        { key: "otro_familiar",  label: "Otros familiares" },
+        { key: "no_familiar",    label: "No familiares" },
+
+        // ----- HABITANTE: indígenas -----
+        { key: "no_pertenece",   label: "No pertenece a pueblo indígena" },
+        { key: "aimara",         label: "Aimara" },
+        { key: "rapa_nui",       label: "Rapa-Nui" },
+        { key: "quechua",        label: "Quechua" },
+        { key: "mapuche",        label: "Mapuche" },
+        { key: "atacameno",      label: "Atacameño" },
+        { key: "coyas",          label: "Coyas" },
+        { key: "kawesqar",       label: "Kawésqar" },
+        { key: "yagan",          label: "Yagán" },
+        { key: "diaguita",       label: "Diaguita" },
+        { key: "changos",        label: "Changos" },
+
+        // ----- HABITANTE: tramos -----
+        { key: "tramo_40",       label: "Tramo 40%" },
+        { key: "tramo_50",       label: "Tramo 50%" },
+        { key: "tramo_60",       label: "Tramo 60%" },
+        { key: "tramo_70",       label: "Tramo 70%" },
+        { key: "tramo_80",       label: "Tramo 80%" },
+        { key: "tramo_90",       label: "Tramo 90%" },
+        { key: "tramo_100",      label: "Tramo 100%" },
+
+        // ----- VIVIENDA: v1 -----
+        { key: "casa",                 label: "Casa" },
+        { key: "departamento",         label: "Departamento" },
+        { key: "pieza_vivienda",       label: "Pieza en vivienda" },
+        { key: "mejora_mediagua",      label: "Mejora / mediagua" },
+        { key: "rancho_ruca",          label: "Rancho / ruca / choza" },
+        { key: "materiales_precarios", label: "Materiales precarios" },
+        { key: "otro_tipo",            label: "Otro tipo de vivienda" },
+        { key: "hospederia",           label: "Hospedería" },
+        { key: "caleta_calle",         label: "Caleta / punto de calle" },
+        { key: "vivienda_colectiva",   label: "Vivienda colectiva" },
+        { key: "residencial_pension",  label: "Residencial / pensión" },
+
+        // ----- VIVIENDA: v2 -----
+        { key: "propio_pagado",        label: "Propio pagado o pagándose" },
+        { key: "arrendado",            label: "Arrendado" },
+        { key: "cedido",               label: "Cedido / uso gratuito" },
+        { key: "usufructo",            label: "Usufructo" },
+        { key: "ocupacion_irregular",  label: "Ocupación irregular" },
+        { key: "poseedor_irregular",   label: "Poseedor irregular" },
+
+        // ----- VIVIENDA: v4 -----
+        { key: "agua_medidor_propio",      label: "Agua: medidor propio" },
+        { key: "agua_medidor_compartido",  label: "Agua: medidor compartido" },
+        { key: "agua_sin_medidor",         label: "Agua: sin medidor" },
+        { key: "pozo_noria",               label: "Pozo / noria" },
+        { key: "rio_vertiente",            label: "Río / vertiente / estero" },
+        { key: "otra_fuente_no_potable",   label: "Otra fuente no potable" },
+
+        // ----- EDUCACION: e1 -----
+        { key: "asiste_si",     label: "Asiste a establecimiento" },
+        { key: "asiste_no",     label: "No asiste" },
+
+        // ----- EDUCACION: e2 -----
+        { key: "no_necesario",        label: "No lo considera necesario" },
+        { key: "problemas_acceso",    label: "Problemas de acceso (oferta)" },
+        { key: "problemas_traslado",  label: "Problemas de traslado" },
+        { key: "problemas_economicos",label: "Problemas económicos" },
+        { key: "quehaceres_cuidado",  label: "Quehaceres hogar / cuidado" },
+        { key: "embarazo_maternidad", label: "Embarazo / maternidad / paternidad" },
+        { key: "enfermedad_inhabilita", label: "Enfermedad que lo(a) inhabilita" },
+        { key: "problemas_familiares", label: "Problemas familiares" },
+        { key: "no_le_interesa",       label: "No le interesa" },
+        { key: "esta_trabajando",      label: "Está trabajando" },
+        { key: "termino_estudiar",     label: "Terminó de estudiar" },
+        { key: "otra_razon",           label: "Otra razón" },
+
+        // ----- EDUCACION: e3 -----
+        { key: "ninguno",               label: "Sin educación formal" },
+        { key: "parvularia",            label: "Educación Parvularia" },
+        { key: "basica",                label: "Educación Básica" },
+        { key: "preparatoria_antigua",  label: "Preparatoria (antiguo)" },
+        { key: "media_ch",              label: "Media Científico-Humanista" },
+        { key: "media_tp",              label: "Media Técnico-Profesional" },
+        { key: "humanidades_antiguo",   label: "Humanidades (antiguo)" },
+        { key: "tecnica_antigua",       label: "Técnica Comercial / Industrial / Normalista" },
+        { key: "cft_incompleta",        label: "CFT Incompleta" },
+        { key: "cft_completa",          label: "CFT Completa" },
+        { key: "ip_incompleta",         label: "IP Incompleta" },
+        { key: "ip_completa",           label: "IP Completa" },
+        { key: "univ_incompleta",       label: "Universitaria Incompleta" },
+        { key: "univ_completa",         label: "Universitaria Completa" },
+        { key: "postgrado",             label: "Postgrado" },
+        { key: "especial_diferencial",  label: "Educación Especial / Diferencial" },
+
+
+        { key: "salud_ceguera",       label: "Ceguera / dificultad visual" },
+{ key: "salud_sordera",       label: "Sordera / dificultad auditiva" },
+{ key: "salud_mudez",         label: "Mudez / dificultad en el habla" },
+{ key: "salud_movilidad",     label: "Dificultad física / movilidad" },
+{ key: "salud_mental",        label: "Problemas mentales" },
+{ key: "salud_psiquiatrico",  label: "Problemas psiquiátricos" },
+
+{ key: "salud_salir_solo",    label: "Puede salir solo(a)" },
+{ key: "salud_compras_solo",  label: "Puede hacer compras solo(a)" },
+{ key: "salud_bano_solo",     label: "Puede bañarse/comer solo(a)" },
+{ key: "salud_moverse_casa",  label: "Puede moverse en la casa" },
+{ key: "salud_esfinter",      label: "Control esfínteres" },
+
+{ key: "trabaja_si",              label: "Personas que están trabajando" },
+        { key: "trabaja_no",              label: "Personas que no trabajan" },
+
+        // ----- OCUPACIÓN: o2 -----
+        { key: "ocup_patron",             label: "Patrón o empleador" },
+        { key: "ocup_cuenta_propia",      label: "Cuenta propia" },
+        { key: "ocup_empleado",           label: "Empleado u obrero" },
+        { key: "ocup_familiar_no_rem",    label: "Familiar no remunerado" },
+        { key: "ocup_serv_domestico",     label: "Servicio doméstico" },
+        { key: "ocup_ffaa_orden",         label: "FF.AA. y de Orden" },
+
+        // ----- OCUPACIÓN: o3 -----
+        { key: "rama_agropecuaria",       label: "Agricultura/ganadería/silvicultura" },
+        { key: "rama_minera",             label: "Minería" },
+        { key: "rama_industrial",         label: "Industrias manufactureras" },
+        { key: "rama_energia",            label: "Electricidad, gas y agua" },
+        { key: "rama_construccion",       label: "Construcción" },
+        { key: "rama_comercio_hoteles",   label: "Comercio/restaurantes/hoteles" },
+        { key: "rama_transporte_com",     label: "Transporte y comunicaciones" },
+        { key: "rama_financiera",         label: "Financieros y seguros" },
+        { key: "rama_servicios_sociales", label: "Servicios comunales y sociales" },
+
+        // ----- OCUPACIÓN: o4 -----
+        { key: "ocup_permanente",         label: "Trabajo permanente" },
+        { key: "ocup_temporada",          label: "Trabajo de temporada/estacional" },
+        { key: "ocup_ocasional",          label: "Trabajo ocasional/eventual" },
+        { key: "ocup_prueba",             label: "Trabajo a prueba" },
+        { key: "ocup_plazo_determinado",  label: "Trabajo por plazo determinado" },
+
+        // ----- OCUPACIÓN: o5 -----
+        { key: "tiene_contrato_si",       label: "Con contrato de trabajo" },
+        { key: "tiene_contrato_no",       label: "Sin contrato de trabajo" },
+
+        // ----- OCUPACIÓN: o6 -----
+        { key: "contrato_indefinido",     label: "Contrato indefinido" },
+        { key: "contrato_plazo_fijo",     label: "Contrato a plazo fijo" },
+        { key: "contrato_obra_faena",     label: "Contrato por obra o faena" },
+        { key: "contrato_aprendizaje",    label: "Contrato de aprendizaje" },
+        { key: "contrato_no_corresponde", label: "No corresponde" },
+
+        // ----- OCUPACIÓN: o7 -----
+        { key: "horas_menor_20",          label: "Menos de 20 horas semanales" },
+        { key: "horas_20_39",             label: "20 a 39 horas semanales" },
+        { key: "horas_40_48",             label: "40 a 48 horas semanales" },
+        { key: "horas_mayor_48",          label: "Más de 48 horas semanales" },
+
+        // ----- OCUPACIÓN: o8 -----
+        { key: "busco_trabajo_si",        label: "Buscó trabajo (últimos 2 meses)" },
+        { key: "busco_trabajo_no",        label: "No buscó trabajo (últimos 2 meses)" },
+
+        // ----- OCUPACIÓN: o9 -----
+        { key: "no_busco_quehaceres_hogar",   label: "No buscó: quehaceres del hogar" },
+        { key: "no_busco_no_quien_ninos",     label: "No buscó: no tiene con quién dejar niños" },
+        { key: "no_busco_enfermedad_cronica", label: "No buscó: enfermedad crónica o invalidez" },
+        { key: "no_busco_cuida_enfermo",      label: "No buscó: cuida enfermo crónico/postrado" },
+        { key: "no_busco_estudiante",         label: "No buscó: estudiante" },
+        { key: "no_busco_jubilado",           label: "No buscó: jubilado/pensionado" },
+        { key: "no_busco_rentista",           label: "No buscó: rentista" },
+        { key: "no_busco_aburrido",           label: "No buscó: se aburrió de buscar" },
+        { key: "no_busco_no_interes",         label: "No buscó: no tiene interés" },
+        { key: "no_busco_otra_razon",         label: "No buscó: otra razón" },
+    ];
+
+    let tituloColumna = "UVEC";   // valor por defecto
+
+if (modo === "sb") tituloColumna = "Sector Barrial";
+if (modo === "omz") tituloColumna = "OMZ";
+if (modo === "cm") tituloColumna = "Comunal";
+
+let headHTML = `<th>${tituloColumna}</th>`;
+
+    const columnasActivas = [];
+
+    definiciones.forEach(def => {
+        if (Object.prototype.hasOwnProperty.call(fila, def.key)) {
+            columnasActivas.push(def);
+            headHTML += `<th>${def.label}</th>`;
+        }
+    });
+
+    thead.innerHTML = headHTML;
+
+    data.forEach(r => {
+        const tr = document.createElement("tr");
+        let nombrePrimeraColumna = "";
+
+if (modo === "uv")  nombrePrimeraColumna = r.uvec || "";
+if (modo === "sb")  nombrePrimeraColumna = r.sb || r.uvec || "";
+if (modo === "omz") nombrePrimeraColumna = r.omz || r.uvec || "";
+if (modo === "cm")  nombrePrimeraColumna = "TOTAL COMUNAL";
+
+let rowHTML = `<td>${nombrePrimeraColumna}</td>`;
+
+        columnasActivas.forEach(def => {
+            rowHTML += `<td>${formatNumber(r[def.key] ?? 0)}</td>`;
+        });
+
+        tr.innerHTML = rowHTML;
+        tbody.appendChild(tr);
+    });
+/* ==========================================================
+   FILA DE TOTALES
+   ========================================================== */
+let totales = {};
+
+// Iniciar contadores en 0
+columnasActivas.forEach(def => {
+    totales[def.key] = 0;
+});
+
+// Sumar cada fila del dataset
+data.forEach(r => {
+    columnasActivas.forEach(def => {
+        const val = r[def.key];
+        const num = (typeof val === "number") ? val : parseInt(val) || 0;
+        totales[def.key] += num;
+    });
+});
+
+// Crear fila final
+let trTotal = document.createElement("tr");
+trTotal.style.fontWeight = "bold";
+trTotal.style.background = "#e9ecef";
+
+let primeraCol = "TOTAL";
+
+let totalHTML = `<td>${primeraCol}</td>`;
+
+// Agregar totales por columna
+columnasActivas.forEach(def => {
+    totalHTML += `<td>${formatNumber(totales[def.key])}</td>`;
+});
+
+trTotal.innerHTML = totalHTML;
+
+// Agregar al final del tbody
+tbody.appendChild(trTotal);
+
+}
+document.addEventListener('shown.bs.collapse', (e) => {
+    const accItem = e.target.closest(".accordion-item");
+    if (!accItem) return;
+    accItem.querySelectorAll(".link-accion").forEach(btn => {
+        btn.style.display = "inline-block";
+    });
+});
+
+document.addEventListener('hidden.bs.collapse', (e) => {
+    const accItem = e.target.closest(".accordion-item");
+    if (!accItem) return;
+    accItem.querySelectorAll(".link-accion").forEach(btn => {
+        btn.style.display = "none";
+    });
+});
+
+function formatNumber(num) {
+    if (num === null || num === undefined || num === "") return "0";
+    num = Number(num);
+    return num.toLocaleString("es-CL"); // ← Formato con puntos
+}
+function limpiarTabla() {
+    document.getElementById("tabla-head").innerHTML = "";
+    document.getElementById("tabla-body").innerHTML = "";
+}
+/* ==========================================================
+   📌 EXPORTAR CSV
+   ========================================================== */
+document.getElementById("btn-exportar").addEventListener("click", () => {
+    const rows = [];
+    document.querySelectorAll("#tabla-resultados tr").forEach(tr => {
+        const cols = [...tr.children].map(td =>
+            `"${td.innerText.replace(/"/g, '""')}"`);
+        rows.push(cols.join(";"));
+    });
+
+    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "rsh.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+});
+
+/* ==========================================================
+   📌 INIT
+   ========================================================== */
+(function init() {
+    setModo("uv");
+    cargarUVEC();
+    cargarSB();   
+    cargarOMZ();       // 🔥 dejo precargados los SB
+    cargarFiltrosCategoria();
+
+})();
+</script>
+
+</body>
+</html>

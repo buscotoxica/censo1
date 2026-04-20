@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Censo - Sistema de Información Geográfica</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #4DB8E8 0%, #357ABD 100%);
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(90deg, #4DB8E8 0%, #357ABD 100%);
+      padding: 20px 40px;
+      text-align: center;
+      color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-logos {
+      display: flex;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .logo-seca {
+      letter-spacing: 3px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .logo-sig {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .logo-sig-icon {
+      width: 30px;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    /* MAIN CONTAINER */
+    .main-container {
+      flex: 1;
+      padding: 20px 40px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+      max-width: 1600px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* SIDEBAR IZQUIERDO */
+    .sidebar-container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-height: calc(100vh - 180px);
+      overflow-y: auto;
+    }
+
+    .modes-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .modes-box .btn {
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1.5px solid #357ABD;
+      color: #357ABD;
+      background: transparent;
+      transition: all 0.3s ease;
+    }
+
+    .modes-box .btn:hover {
+      background: #f0f8ff;
+    }
+
+    .btn-modo-active {
+      background: #357ABD;
+      color: white;
+    }
+
+    .filter-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      padding: 8px 0;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    .form-control-sm,
+    .form-select-sm {
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+
+    .form-control-sm:focus,
+    .form-select-sm:focus {
+      border-color: #357ABD;
+      box-shadow: 0 0 0 0.2rem rgba(53, 122, 189, 0.25);
+    }
+
+    /* ACORDEONES */
+    .accordion {
+      border: none;
+    }
+
+    .accordion-item {
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .accordion-button {
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      background: #f8f9fa;
+      border: none;
+    }
+
+    .accordion-button:not(.collapsed) {
+      background: #e7f1ff;
+      color: #357ABD;
+      box-shadow: none;
+    }
+
+    .accordion-button:focus {
+      border-color: #357ABD;
+      box-shadow: none;
+    }
+
+    .accordion-body {
+      padding: 12px;
+      font-size: 13px;
+    }
+
+    .form-check {
+      padding: 6px 0;
+      margin: 0;
+    }
+
+    .form-check-input {
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .form-check-input:checked {
+      background: #357ABD;
+      border-color: #357ABD;
+    }
+
+    .form-check-label {
+      margin-left: 8px;
+      margin-bottom: 0;
+      cursor: pointer;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .sidebar-button-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .sidebar-button-group .btn {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+    }
+
+    /* BOTÓN BUSCAR */
+    .btn-buscar {
+      background: #357ABD;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-top: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-buscar:hover {
+      background: #2d6a9f;
+      color: white;
+    }
+
+    .btn-buscar:active {
+      transform: scale(0.98);
+    }
+
+    /* CONTENEDOR DERECHO */
+    .content-container {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .content-header h4 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .export-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+      border: 1px solid #357ABD;
+      color: #357ABD;
+      background: transparent;
+      transition: all 0.3s ease;
+    }
+
+    .export-btn:hover {
+      background: #357ABD;
+      color: white;
+    }
+
+    /* TABLA */
+    .table-section {
+      overflow-x: auto;
+      flex: 1;
+    }
+
+    .table {
+      font-size: 13px;
+      margin-bottom: 0;
+    }
+
+    .table thead {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+    }
+
+    .table thead th {
+      font-weight: 600;
+      color: #333;
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      white-space: nowrap;
+    }
+
+    .table tbody td {
+      padding: 10px;
+      border: 1px solid #e9ecef;
+      color: #555;
+    }
+
+    .table tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    /* LISTA DE SUGERENCIAS UV */
+    .list-group {
+      position: absolute;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      z-index: 1000;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .list-group-item {
+      padding: 8px 12px;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .list-group-item:hover {
+      background: #e7f1ff;
+      color: #357ABD;
+    }
+
+    #uv-selected {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge-uv {
+      background: #357ABD;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-uv-close {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .badge-uv-close:hover {
+      opacity: 0.7;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .main-container {
+        grid-template-columns: 1fr;
+        padding: 15px 20px;
+      }
+
+      .sidebar-container {
+        max-height: none;
+      }
+
+      .header {
+        flex-direction: column;
+        padding: 15px 20px;
+        gap: 15px;
+      }
+
+      .header-logos {
+        gap: 20px;
+      }
+    }
+
+    /* SCROLLBAR PERSONALIZADA */
+    .sidebar-container::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .sidebar-container::-webkit-scrollbar-track {
+      background: #f0f0f0;
+      border-radius: 10px;
+    }
+
+    .sidebar-container::-webkit-scrollbar-thumb {
+      background: #357ABD;
+      border-radius: 10px;
+    }
+
+    .sidebar-container::-webkit-scrollbar-thumb:hover {
+      background: #2d6a9f;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-logos">
+      <div class="logo logo-seca">S<br>E<br>C<br>A</div>
+      <div class="logo logo-sig">
+        <div class="logo-sig-icon">🌐</div>
+        <div>SIG</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-container">
+
+    <!-- SIDEBAR IZQUIERDO -->
+    <div class="sidebar-container">
+
+      <!-- Botones de modo dentro del sidebar al inicio -->
+      <div class="modes-box">
+        <button id="btn-cm" class="btn btn-outline-light" onclick="setModo('cm')">CM</button>
+        <button id="btn-omz" class="btn btn-outline-light" onclick="setModo('omz')">OMZ</button>
+        <button id="btn-sb" class="btn btn-outline-light" onclick="setModo('sb')">SB</button>
+        <button id="btn-uv" class="btn btn-outline-light btn-modo-active" onclick="setModo('uv')">UV</button>
+      </div>
+
+      <!-- SECCIÓN FILTRO PRINCIPAL -->
+      <div class="filter-section">
+        <div class="filter-label">
+          <span id="label-principal">UV</span>
+        </div>
+      </div>
+
+      <!-- ACORDEÓN PARA SB / OMZ -->
+      <div id="accordion-filtros" style="display:none;" class="filter-section">
+        <div class="accordion" id="ac-filter">
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="hd-filtros">
+              <button class="accordion-button collapsed"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#cp-filtros">
+                Seleccionar Nombres
+              </button>
+            </h2>
+
+            <div id="cp-filtros" class="accordion-collapse collapse"
+                 aria-labelledby="hd-filtros"
+                 data-bs-parent="#ac-filter">
+
+              <div class="accordion-body">
+                <div id="lista-checkboxes"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- UV AUTOCOMPLETE -->
+      <div id="uv-container" style="display:none; margin-bottom: 20px;" class="filter-section">
+        <input id="uv-search" class="form-control form-control-sm"
+               placeholder="Buscar UV (código o nombre)..."
+               style="margin-bottom: 10px;">
+
+        <div id="uv-suggestions"
+             class="list-group shadow-sm"
+             style="display:none;"></div>
+
+        <div id="uv-selected" style="margin-top: 10px;"></div>
+      </div>
+
+      <!-- AÑO -->
+      <div class="filter-section">
+        <label class="form-label">Año</label>
+        <select id="filtro-annio" class="form-select form-select-sm">
+          <option value="">Seleccione año...</option>
+        </select>
+      </div>
+
+      <!-- MÉTRICAS COMO ACORDEÓN DESPLEGABLE -->
+      <div class="filter-section">
+        <div class="accordion" id="accordion-metricas">
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="hd-metricas">
+              <button class="accordion-button collapsed"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#cp-metricas">
+                Mostrar columnas
+              </button>
+            </h2>
+
+            <div id="cp-metricas" class="accordion-collapse collapse"
+                 aria-labelledby="hd-metricas"
+                 data-bs-parent="#accordion-metricas">
+
+              <div class="accordion-body">
+                <div class="sidebar-button-group">
+                  <button id="btn-select-all" class="btn btn-sm btn-outline-primary">
+                    Todos
+                  </button>
+                  <button id="btn-unselect-all" class="btn btn-sm btn-outline-danger">
+                    Ninguno
+                  </button>
+                </div>
+
+                <div id="metricas-box" style="font-size: 13px; margin-top: 10px;">
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="area"> <label class="form-check-label">Área</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="total_pers"> <label class="form-check-label">Total Personas</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="densidad"> <label class="form-check-label">Densidad</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="total_vivi"> <label class="form-check-label">Total Viviendas</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="hombres"> <label class="form-check-label">Hombres</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="mujeres"> <label class="form-check-label">Mujeres</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="edad_0a5"> <label class="form-check-label">0-5 años</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="edad_6a14"> <label class="form-check-label">6-14 años</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="edad_15a64"> <label class="form-check-label">15-64 años</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="edad_64ymas"> <label class="form-check-label">65+ años</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="iam"> <label class="form-check-label">IAM</label></div>
+                  <div class="form-check"><input type="checkbox" class="form-check-input m-check" value="idd"> <label class="form-check-label">IDD</label></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTÓN BUSCAR -->
+      <button id="btn-buscar" class="btn btn-buscar">
+        Buscar
+      </button>
+
+    </div>
+
+    <!-- CONTENEDOR DERECHO: RESULTADOS -->
+    <div class="content-container">
+
+      <!-- Header con información y botón exportar -->
+      <div class="content-header">
+        <h4>Resultados</h4>
+        <button id="btn-exportar" class="btn export-btn">
+          📊 Exportar CSV
+        </button>
+      </div>
+
+      <!-- TABLA -->
+      <div class="table-section">
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped mb-0" id="tabla-resultados">
+            <thead><tr id="tabla-head"></tr></thead>
+            <tbody id="tabla-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ... (aquí va todo el JavaScript original sin cambios)
+    
+    let modo = 'uv';
+    let datosCompletos = [];
+
+    const metricasDefinidas = {
+      area: 'Área',
+      total_pers: 'Total Personas',
+      densidad: 'Densidad',
+      total_vivi: 'Total Viviendas',
+      hombres: 'Hombres',
+      mujeres: 'Mujeres',
+      edad_0a5: '0-5 años',
+      edad_6a14: '6-14 años',
+      edad_15a64: '15-64 años',
+      edad_64ymas: '65+ años',
+      iam: 'IAM',
+      idd: 'IDD'
+    };
+
+    // Cargar datos desde JSON
+    fetch('datos.json')
+      .then(resp => resp.json())
+      .then(data => {
+        datosCompletos = data;
+        cargarAnnios();
+        inicializarEventos();
+      })
+      .catch(err => console.error('Error cargando datos:', err));
+
+    function setModo(nuevoModo) {
+      modo = nuevoModo;
+      
+      // Actualizar botones
+      document.querySelectorAll('.modes-box .btn').forEach(btn => {
+        btn.classList.remove('btn-modo-active');
+      });
+      document.getElementById('btn-' + nuevoModo).classList.add('btn-modo-active');
+
+      // Mostrar/ocultar filtros según modo
+      if (modo === 'uv') {
+        document.getElementById('uv-container').style.display = 'block';
+        document.getElementById('accordion-filtros').style.display = 'none';
+        document.getElementById('label-principal').textContent = 'UV';
+      } else if (modo === 'sb') {
+        document.getElementById('uv-container').style.display = 'none';
+        document.getElementById('accordion-filtros').style.display = 'block';
+        cargarFiltros('sb');
+        document.getElementById('label-principal').textContent = 'Seleccionar Manzanas';
+      } else if (modo === 'omz') {
+        document.getElementById('uv-container').style.display = 'none';
+        document.getElementById('accordion-filtros').style.display = 'block';
+        cargarFiltros('omz');
+        document.getElementById('label-principal').textContent = 'Seleccionar Zonas';
+      } else if (modo === 'cm') {
+        document.getElementById('uv-container').style.display = 'none';
+        document.getElementById('accordion-filtros').style.display = 'none';
+        document.getElementById('label-principal').textContent = 'CM';
+      }
+    }
+
+    function cargarFiltros(filtro) {
+      const lista = new Set();
+      datosCompletos.forEach(item => {
+        if (item[filtro]) lista.add(item[filtro]);
+      });
+
+      const html = Array.from(lista)
+        .sort()
+        .map(nombre => `
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input filtro-check" value="${nombre}">
+            <label class="form-check-label">${nombre}</label>
+          </div>
+        `)
+        .join('');
+
+      document.getElementById('lista-checkboxes').innerHTML = html;
+    }
+
+    function cargarAnnios() {
+      const annios = [...new Set(datosCompletos.map(d => d.annio))].sort();
+      const select = document.getElementById('filtro-annio');
+      annios.forEach(annio => {
+        const option = document.createElement('option');
+        option.value = annio;
+        option.textContent = annio;
+        select.appendChild(option);
+      });
+    }
+
+    function inicializarEventos() {
+      // UV Autocomplete
+      const inputUV = document.getElementById('uv-search');
+      const suggestionsDiv = document.getElementById('uv-suggestions');
+      let uvSeleccionados = [];
+
+      inputUV.addEventListener('input', function() {
+        const valor = this.value.toLowerCase();
+        if (valor.length < 2) {
+          suggestionsDiv.style.display = 'none';
+          return;
+        }
+
+        const matches = datosCompletos
+          .filter(d => d.uv && (d.uv.toLowerCase().includes(valor) || d.nombre_uv.toLowerCase().includes(valor)))
+          .map(d => ({ uv: d.uv, nombre: d.nombre_uv }))
+          .filter((v, i, a) => a.findIndex(x => x.uv === v.uv) === i);
+
+        if (matches.length === 0) {
+          suggestionsDiv.style.display = 'none';
+          return;
+        }
+
+        suggestionsDiv.innerHTML = matches.map(m => `
+          <div class="list-group-item" onclick="agregarUV('${m.uv}', '${m.nombre}')">${m.uv} - ${m.nombre}</div>
+        `).join('');
+        suggestionsDiv.style.display = 'block';
+      });
+
+      window.agregarUV = function(uv, nombre) {
+        if (!uvSeleccionados.find(u => u.uv === uv)) {
+          uvSeleccionados.push({ uv, nombre });
+          actualizarDisplayUV();
+        }
+        document.getElementById('uv-search').value = '';
+        document.getElementById('uv-suggestions').style.display = 'none';
+      };
+
+      function actualizarDisplayUV() {
+        document.getElementById('uv-selected').innerHTML = uvSeleccionados.map(u => `
+          <div class="badge-uv">${u.uv} - ${u.nombre} <span class="badge-uv-close" onclick="eliminarUV('${u.uv}')">✕</span></div>
+        `).join('');
+      }
+
+      window.eliminarUV = function(uv) {
+        uvSeleccionados = uvSeleccionados.filter(u => u.uv !== uv);
+        actualizarDisplayUV();
+      };
+
+      // Botones Todos/Ninguno
+      document.getElementById('btn-select-all').addEventListener('click', function() {
+        document.querySelectorAll('.m-check').forEach(ch => ch.checked = true);
+      });
+
+      document.getElementById('btn-unselect-all').addEventListener('click', function() {
+        document.querySelectorAll('.m-check').forEach(ch => ch.checked = false);
+      });
+
+      // Botón Buscar
+      document.getElementById('btn-buscar').addEventListener('click', function() {
+        let filtrados = datosCompletos;
+        const annio = document.getElementById('filtro-annio').value;
+
+        if (annio) {
+          filtrados = filtrados.filter(d => d.annio == annio);
+        }
+
+        if (modo === 'uv') {
+          const uvsSeleccionados = Array.from(document.querySelectorAll('#uv-selected .badge-uv'))
+            .map(badge => badge.textContent.split(' ')[0]);
+          if (uvsSeleccionados.length > 0) {
+            filtrados = filtrados.filter(d => uvsSeleccionados.includes(d.uv));
+          }
+        } else if (modo === 'sb' || modo === 'omz') {
+          const seleccionados = Array.from(document.querySelectorAll('.filtro-check:checked')).map(ch => ch.value);
+          if (seleccionados.length > 0) {
+            filtrados = filtrados.filter(d => seleccionados.includes(d[modo]));
+          }
+        }
+
+        mostrarTabla(filtrados);
+      });
+
+      // Botón Exportar
+      document.getElementById('btn-exportar').addEventListener('click', function() {
+        const tabla = document.getElementById('tabla-resultados');
+        const filas = tabla.querySelectorAll('tr');
+        let csv = '';
+
+        filas.forEach(fila => {
+          const celdas = fila.querySelectorAll('th, td');
+          csv += Array.from(celdas).map(c => c.textContent).join(',') + '\n';
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'datos_censo.csv';
+        a.click();
+      });
+    }
+
+    function mostrarTabla(datos) {
+      const thead = document.getElementById('tabla-head');
+      const tbody = document.getElementById('tabla-body');
+      
+      const metricasSeleccionadas = Array.from(document.querySelectorAll('.m-check:checked')).map(ch => ch.value);
+      
+      const columnas = ['nombre', 'uv', 'sb', 'omz', 'cm', 'annio', ...metricasSeleccionadas];
+      
+      thead.innerHTML = columnas.map(col => {
+        const label = metricasDefinidas[col] || (col.charAt(0).toUpperCase() + col.slice(1));
+        return `<th>${label}</th>`;
+      }).join('');
+
+      tbody.innerHTML = datos.map(fila => {
+        return `<tr>${columnas.map(col => `<td>${fila[col] || ''}</td>`).join('')}</tr>`;
+      }).join('');
+    }
+  </script>
+
+</body>
+</html>
