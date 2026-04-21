@@ -155,7 +155,40 @@
         grid-template-columns: 1fr;
       }
     }
+  .modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
 
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  text-align: center;
+  width: 300px;
+}
+
+.modal input {
+  width: 100%;
+  padding: 0.7rem;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+}
+
+.modal button {
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: #4d49bf;
+  color: white;
+  cursor: pointer;
+}
   </style>
 </head>
 <body>
@@ -167,7 +200,9 @@
     <div class="card__container">
 
       <!-- Censo -->
-      <a href="{% url 'censo:panel' %}" class="card">
+      <a href="{% url 'censo:panel' %}" 
+   class="card" 
+   onclick="handleClick(event, this.href, 'CENSO')">
         <img src="https://img.genially.com/5f0bae4c3ef16f3976db6be3/97338ce6-f960-4993-a1fb-9b21b7f2311c.png" class="card__image">
         <h3 class="card__title">Censo</h3>
         <p class="card__subtitle">Datos censales por OMZ, SB, UV y comuna.</p>
@@ -175,7 +210,9 @@
       </a>
 
       <!-- RSH -->
-      <a href="{% url 'rsh:panel' %}" class="card">
+      <a href="{% url 'rsh:panel' %}" 
+   class="card" 
+   onclick="handleClick(event, this.href, 'RSH')">
         <img src="https://departamentosig.munivalpo.cl/media/assets/imagen_sig/None/adjunto_vc3NVmc.png" class="card__image">
         <h3 class="card__title">RSH</h3>
         <p class="card__subtitle">Información del Registro Social de Hogares.</p>
@@ -183,7 +220,9 @@
       </a>
 
       <!-- Catastro -->
-      <a href="https://geoportal-sistema-de-informacion-geografica-munivalpo.hub.arcgis.com/" class="card">
+      <a href="https://geoportal-sistema-de-informacion-geografica-munivalpo.hub.arcgis.com/" 
+   class="card" 
+   onclick="handleClick(event, this.href, 'GEOPORTAL')">
         <img src="https://departamentosig.munivalpo.cl/media/assets/imagen_sig/None/adjunto_oxQdPhF.png" class="card__image">
         <h3 class="card__title">Geoportal Valparaíso</h3>
         <p class="card__subtitle"></p>
@@ -192,6 +231,85 @@
 
     </div>
   </div>
+<div id="emailModal" class="modal">
+  <div class="modal-content">
+    <h2>Bienvenido</h2>
+    <p>Ingrese su correo para continuar</p>
+    <input type="email" id="userEmail" placeholder="correo@ejemplo.cl" required>
+    <button onclick="saveEmail()">Ingresar</button>
+  </div>
+</div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const savedEmail = localStorage.getItem("userEmail");
+
+    if (!savedEmail) {
+        document.getElementById("emailModal").style.display = "flex";
+    } else {
+        document.getElementById("emailModal").style.display = "none";
+    }
+});
+
+function saveEmail() {
+    const email = document.getElementById("userEmail").value.trim();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email) {
+        alert("Debe ingresar un correo");
+        return;
+    }
+
+    if (!emailRegex.test(email)) {
+        alert("Ingrese un correo válido con formato ejemplo@dominio.com");
+        return;
+    }
+
+    localStorage.setItem("userEmail", email);
+    document.getElementById("emailModal").style.display = "none";
+}
+
+function handleClick(event, url, panel) {
+    event.preventDefault(); // 🚫 evita navegación inmediata
+
+    const email = localStorage.getItem("userEmail");
+
+    fetch("/logging/registrar-click/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({
+            email: email,
+            panel: panel
+        })
+    })
+    .then(response => {
+        window.location.href = url; // 👈 redirige después
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        window.location.href = url;
+    });
+}
+
+// función correcta para CSRF
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 </body>
 </html>
