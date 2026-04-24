@@ -452,12 +452,30 @@ tbody tr:last-child td {
   .av2-subtab-btn { padding: 8px 20px; background: transparent; border: none; font-size: 13px; font-weight: 600; color: #94a3b8; cursor: pointer; font-family: var(--censo-font); border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
   .av2-subtab-btn:hover  { color: #1e293b; }
   .av2-subtab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+  #btn-movil-volver-filtros {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 30px !important;
+  padding: 14px 32px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  font-family: var(--censo-font) !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 20px rgba(37,99,235,0.5) !important;
+  white-space: nowrap !important;
+}
   </style>
 </head>
 <body class="p-3">
 
 <div class="logo-header">
-  <a href="/" class="btn btn-sm btn-outline-light volver-btn">&larr; Volver</a>
+  
   <img src="https://departamentosig.munivalpo.cl/media/assets/imagen_sig/None/adjunto_2PDGoCX.png" alt="Logo SIG" class="logo-sig">
 </div>
 
@@ -575,6 +593,9 @@ tbody tr:last-child td {
 
     <!-- PANEL RESULTADOS -->
     <div class="col-md-9">
+    <button id="btn-movil-volver-filtros" onclick="movilVolverFiltros()" style="display:none;">
+  ← Filtros
+</button>
       <div class="content-card shadow-sm">
 
         <!-- EMPTY STATE -->
