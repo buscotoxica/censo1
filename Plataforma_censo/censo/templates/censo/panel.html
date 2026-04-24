@@ -10,43 +10,19 @@
 
   <style>
   @media (max-width: 768px) {
-
   body { padding-top: 10px !important; padding-left: 8px !important; padding-right: 8px !important; }
   .logo-sig { width: 180px !important; }
   .volver-btn { font-size: 12px !important; padding: 5px 8px !important; }
-
-  /* Layout: columna */
-  .row.g-3 { flex-direction: column !important; margin-top: 0 !important; }
-
-  /* Sidebar ocupa 100% */
-  .col-md-3 {
-    flex: 0 0 100% !important; max-width: 100% !important;
-    transform: none !important; opacity: 1 !important; padding: 0 !important;
-  }
-  .col-md-3.sidebar-oculto {
-    flex: 0 0 0px !important; max-width: 0px !important;
-    overflow: hidden !important; padding: 0 !important;
-  }
-  .col-md-9 { flex: 0 0 100% !important; max-width: 100% !important; }
-
-  /* En móvil ocultar panel resultados por defecto */
-  .col-md-9 { display: none !important; }
-  .col-md-9.movil-resultados-visible { display: flex !important; }
-
-  /* Ocultar botón colapsar desktop */
   #btn-colapsar { display: none !important; }
   #btn-abrir-sidebar { display: none !important; }
-
   .sidebar { padding: 14px 12px !important; }
-  .content-card { padding: 16px 14px !important; border-radius: 12px !important; }
-  .top-buttons button { font-size: 11px !important; padding: 6px 0 !important; }
+  .content-card { padding: 16px 14px !important; }
   .table-responsive { max-height: 45vh !important; }
   table { font-size: 12px !important; }
   thead th { font-size: 10px !important; padding: 6px 7px !important; }
   tbody td { padding: 7px 8px !important; }
   #ciudad3d-wrap { height: 240px !important; }
   #leaf-wrap { height: 160px !important; }
-  #btn-toggle-3d, #btn-toggle-area { font-size: 10px !important; padding: 4px 10px !important; }
   .av2-tab-btn { font-size: 10px !important; padding: 10px 3px !important; }
   #ind-kpi-row { grid-template-columns: 1fr 1fr !important; }
   #ind-row3 { grid-template-columns: 1fr !important; }
@@ -54,11 +30,8 @@
   #metricas-box { max-height: 160px !important; }
   #categorias-wrap { grid-template-columns: 1fr 1fr !important; }
   #results-header { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
-  #empty-state-panel { padding: 30px 16px !important; min-height: 200px !important; }
-
-  /* Botón volver a filtros — solo móvil */
   #btn-movil-volver-filtros {
-    display: flex !important;
+    display: none;
     align-items: center; gap: 6px;
     background: #2563eb; color: white; border: none;
     border-radius: 10px; padding: 10px 16px;
@@ -71,9 +44,7 @@
 
 @media (min-width: 769px) {
   #btn-movil-volver-filtros { display: none !important; }
-  .col-md-9 { display: flex !important; }
 }
-
 @media (max-width: 400px) {
   .logo-sig { width: 140px !important; }
   #ciudad3d-wrap { height: 200px !important; }
@@ -508,7 +479,7 @@ tbody tr:last-child td {
 <div class="container-fluid">
   <button id="btn-abrir-sidebar" onclick="toggleSidebar()">&#9654; Filtros</button>
 
-  <div class="row g-3">
+  <div class="row g-3" id="main-row">
 
     <!-- SIDEBAR -->
     <div class="col-md-3" style="position:relative;">
@@ -1658,26 +1629,35 @@ mbMap.once('moveend', function(){
 
 function initLeaflet(){if(mapaLeaflet){setTimeout(function(){mapaLeaflet.invalidateSize();},300);return;}mapaLeaflet=L.map("leaf-map",{center:[-33.045,-71.590],zoom:13});L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{attribution:"© OpenStreetMap © CARTO",subdomains:"abcd",maxZoom:19}).addTo(mapaLeaflet);}
 function actualizarMapa2d(sectores){leafPolys.forEach(function(p){mapaLeaflet.removeLayer(p);});leafPolys=[];var bounds=[];sectores.forEach(function(s){if(!s.coordsLeaf||!s.coordsLeaf.length)return;var col=PALETA[s.colIdx].leaf;var poly=L.polygon(s.coordsLeaf,{color:col,weight:2.5,opacity:.9,fillColor:col,fillOpacity:.18}).addTo(mapaLeaflet);poly.bindTooltip(s.nombre,{sticky:true,className:"leaflet-tooltip-clara"});leafPolys.push(poly);s.coordsLeaf.forEach(function(c){bounds.push(c);});});if(bounds.length)mapaLeaflet.fitBounds(bounds,{padding:[30,30],maxZoom:15});setTimeout(function(){mapaLeaflet.invalidateSize();},200);setTimeout(function(){mapaLeaflet.invalidateSize();},700);}
-function esMovil(){ return window.innerWidth <= 768; }
+function esMovil(){ return window.innerWidth<=768; }
 
 function movilMostrarResultados(){
   if(!esMovil()) return;
-  var sidebar=document.querySelector('.col-md-3');
-  var results=document.querySelector('.col-md-9');
-  if(sidebar) sidebar.style.display='none';
-  if(results){results.style.display='flex';results.classList.add('movil-resultados-visible');}
+  document.getElementById('main-row').style.cssText='display:block !important;';
+  document.querySelector('.col-md-3').style.cssText='display:none !important;';
+  document.querySelector('.col-md-9').style.cssText='display:block !important;width:100% !important;';
+  var btnVolver=document.getElementById('btn-movil-volver-filtros');
+  if(btnVolver) btnVolver.style.cssText='display:flex !important;';
 }
 
 function movilVolverFiltros(){
   if(!esMovil()) return;
-  var sidebar=document.querySelector('.col-md-3');
-  var results=document.querySelector('.col-md-9');
-  if(sidebar) sidebar.style.display='';
-  if(results){results.style.display='none';results.classList.remove('movil-resultados-visible');}
+  document.getElementById('main-row').style.cssText='display:block !important;';
+  document.querySelector('.col-md-3').style.cssText='display:block !important;width:100% !important;';
+  document.querySelector('.col-md-9').style.cssText='display:none !important;';
+  var btnVolver=document.getElementById('btn-movil-volver-filtros');
+  if(btnVolver) btnVolver.style.cssText='display:none !important;';
   setTimeout(function(){if(mbMap)mbMap.resize();if(mapaLeaflet)mapaLeaflet.invalidateSize();},100);
 }
 
-
+function initMovil(){
+  if(!esMovil()) return;
+  document.getElementById('main-row').style.cssText='display:block !important;';
+  document.querySelector('.col-md-3').style.cssText='display:block !important;width:100% !important;';
+  document.querySelector('.col-md-9').style.cssText='display:none !important;';
+  var btnVolver=document.getElementById('btn-movil-volver-filtros');
+  if(btnVolver) btnVolver.style.cssText='display:none !important;';
+}
 function renderTabla(data,metricas){
   movilMostrarResultados();
   ocultarEmptyState();
@@ -1719,7 +1699,8 @@ function toggleSidebar(){var col=document.querySelector(".col-md-3");var btnFlot
 cargarAnios();
 setModo("uv");
 seleccionarCategoria("poblacion");
-mostrarEmptyState(); /* mostrar empty state al cargar */
+mostrarEmptyState();
+initMovil(); /* mostrar empty state al cargar */
 </script>
 
 <script>
