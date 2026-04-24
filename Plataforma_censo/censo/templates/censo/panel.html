@@ -1198,8 +1198,37 @@ document.getElementById("btn-buscar").addEventListener("click", async function()
         });
       }
       return Promise.resolve(todosPoligonos);
-    }).then(function(poligonos){
-      if(!poligonos||!poligonos.length){document.getElementById("viz-wrapper").style.display="none";return;}
+     }).then(function(poligonos){
+      if(!poligonos||!poligonos.length){
+        document.getElementById("viz-wrapper").style.display="none";
+        return;
+      }
+
+      // MÓVIL: solo Leaflet 2D
+      if(esMovil()){
+        document.getElementById("viz-wrapper").style.display="block";
+        document.getElementById("ciudad3d-wrap").style.display="none";
+        document.getElementById("viz-divider").style.display="none";
+        document.getElementById("btn-toggle-3d").style.display="none";
+        document.getElementById("btn-toggle-area").style.display="none";
+        document.getElementById("leaf-wrap").style.cssText="border-radius:14px !important;border:1px solid #c8d8f0 !important;height:280px !important;";
+        initLeaflet();
+        leafPolys.forEach(function(p){mapaLeaflet.removeLayer(p);});
+        leafPolys=[];
+        var bounds=[];
+        poligonos.forEach(function(pol){
+          var latlngs=pol.map(function(c){return[c[0],c[1]];});
+          var poly=L.polygon(latlngs,{color:"#2563eb",weight:1.2,opacity:0.7,fillColor:"#2563eb",fillOpacity:0.12}).addTo(mapaLeaflet);
+          leafPolys.push(poly);
+          latlngs.forEach(function(c){bounds.push(c);});
+        });
+        if(bounds.length) mapaLeaflet.fitBounds(bounds,{padding:[20,20],maxZoom:13});
+        setTimeout(function(){mapaLeaflet.invalidateSize();},200);
+        sectoresActivos=[];sectorActivo=0;
+        return;
+      }
+
+      // Calcular centro general para el mapa
       var todosLng=[],todosLat=[];
       poligonos.forEach(function(pol){pol.forEach(function(c){todosLat.push(c[0]);todosLng.push(c[1]);});});
       var centroLng=(Math.min.apply(null,todosLng)+Math.max.apply(null,todosLng))/2;
@@ -1551,6 +1580,22 @@ function ocultarAnalytics(){
 function mostrarViz(sectores){
   if(analyticsVisible)ocultarAnalytics();
   areaPoligonoActivo=false;alturaMaximaCache={};
+  if(esMovil()){
+    document.getElementById("viz-wrapper").style.display="block";
+    document.getElementById("ciudad3d-wrap").style.display="none";
+    document.getElementById("viz-divider").style.display="none";
+    document.getElementById("btn-toggle-3d").style.display="none";
+    document.getElementById("btn-toggle-area").style.display="none";
+    document.getElementById("ciudad-ui").innerHTML="";
+    document.getElementById("leaf-wrap").style.cssText="border-radius:14px !important;border:1px solid #c8d8f0 !important;height:280px !important;";
+    initLeaflet();
+    actualizarMapa2d(sectores);
+    sectoresActivos=sectores; sectorActivo=0;
+    return;
+  }
+  document.getElementById("ciudad3d-wrap").style.display="block";
+  document.getElementById("viz-divider").style.display="flex";
+  document.getElementById("leaf-wrap").style.cssText="";
   var btn=document.getElementById("btn-toggle-area");
   btn.innerHTML="🟡 Área: OFF";btn.style.background="rgba(255,255,255,0.92)";btn.style.color="#92400e";btn.style.borderColor="rgba(217,119,6,0.5)";
   document.getElementById("viz-wrapper").style.display="block";
