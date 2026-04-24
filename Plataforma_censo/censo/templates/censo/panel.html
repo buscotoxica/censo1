@@ -572,7 +572,7 @@ tbody tr:last-child td {
         <div class="d-flex justify-content-between align-items-center mb-3 censo-hidden" id="results-header">
           <h4 class="mb-0">Resultados</h4>
           <div class="d-flex gap-2">
-            <button id="btn-exportar" class="btn btn-outline-primary btn-sm">Exportar CSV</button>
+            {% comment %} <button id="btn-exportar" class="btn btn-outline-primary btn-sm">Exportar CSV</button> {% endcomment %}
             <button id="btn-analytics" class="btn btn-outline-success btn-sm" style="display:none;" onclick="toggleAnalytics()">Ver análisis</button>
           </div>
         </div>
@@ -615,13 +615,7 @@ tbody tr:last-child td {
           <div id="ciudad3d-wrap">
             <div id="mapbox-map"></div>
             <div id="ciudad-ui"></div>
-            <div id="ciudad-panel">
-              <div class="cp-title" id="cp-nombre"></div>
-              <div class="cp-row"><span>Población</span><span class="cp-val" id="cp-pob"></span></div>
-              <div class="cp-row"><span>Viviendas</span><span class="cp-val" id="cp-viv"></span></div>
-              <div class="cp-row"><span>Hombres</span><span class="cp-val" id="cp-hom"></span></div>
-              <div class="cp-row"><span>Mujeres</span><span class="cp-val" id="cp-muj"></span></div>
-            </div>
+            
             <div id="ciudad-hint">Arrastra · Scroll · Ctrl+drag inclinar</div>
             <div style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
               <button id="btn-toggle-3d" onclick="toggleEdificios3d()" style="background:rgba(255,255,255,0.92);border:1px solid rgba(37,99,235,0.4);color:#1d4ed8;font-size:12px;padding:6px 16px;border-radius:20px;cursor:pointer;font-family:'Sora',sans-serif;box-shadow:0 2px 8px rgba(37,99,235,0.15);transition:all 0.2s;">🏢 Edificios 3D: ON</button>
@@ -706,8 +700,7 @@ var av2 = {
   idxActivo: -1,
   metricas: [],
   annio: null,
-  compLoaded: false,
-  evolLoaded: false,
+  searchId: 0,
   getRaw: function() {
     if(this.idxActivo === -1) return this.unidades.reduce(function(a,u){return a.concat(u.rawData);}, []);
     return this.unidades[this.idxActivo] ? this.unidades[this.idxActivo].rawData : [];
@@ -765,13 +758,15 @@ function seleccionarUnidad(idx) {
   _resetPanelContenido('tab-indicadores');
   _resetPanelContenido('tab-poblacion');
   _resetPanelContenido('tab-vivienda');
+  _resetPanelContenido('tab-comparativo');
+  _resetPanelContenido('tab-evolucion');
   var tabActivo = document.querySelector('.av2-tab-btn.active');
   if(tabActivo) switchATab(tabActivo.dataset.tab);
 }
 
 function _resetPanelContenido(panelId) {
   var p = document.getElementById(panelId);
-  if(p) { p.innerHTML=''; p.removeAttribute('data-av2-built'); }
+  if(p) { p.innerHTML=''; p.removeAttribute('data-av2-built'); p.removeAttribute('data-sid'); }
 }
 
 var CATEGORIAS = {
@@ -1101,45 +1096,150 @@ if(modo==="cm"){
     prepararAnalytics(unidades,metricas,annio);
     mostrarBotonAnalytics();
 
-    var VALPO_COORDS = [
-      [-33.0089,-71.5568],[-33.0102,-71.5432],[-33.0165,-71.5301],[-33.0198,-71.5189],
-      [-33.0243,-71.5072],[-33.0289,-71.4980],[-33.0350,-71.4891],[-33.0412,-71.4832],
-      [-33.0489,-71.4798],[-33.0560,-71.4801],[-33.0631,-71.4836],[-33.0695,-71.4889],
-      [-33.0752,-71.4968],[-33.0801,-71.5061],[-33.0845,-71.5168],[-33.0878,-71.5284],
-      [-33.0895,-71.5401],[-33.0897,-71.5525],[-33.0882,-71.5641],[-33.0851,-71.5752],
-      [-33.0805,-71.5855],[-33.0745,-71.5950],[-33.0672,-71.6036],[-33.0590,-71.6110],
-      [-33.0499,-71.6169],[-33.0401,-71.6215],[-33.0300,-71.6245],[-33.0198,-71.6258],
-      [-33.0095,-71.6254],[-32.9995,-71.6233],[-32.9899,-71.6196],[-32.9810,-71.6144],
-      [-32.9730,-71.6079],[-32.9660,-71.6003],[-32.9602,-71.5918],[-32.9556,-71.5826],
-      [-32.9524,-71.5729],[-32.9505,-71.5629],[-32.9501,-71.5528],[-32.9511,-71.5428],
-      [-32.9535,-71.5331],[-32.9572,-71.5240],[-32.9622,-71.5158],[-32.9682,-71.5085],
-      [-32.9751,-71.5023],[-32.9827,-71.4973],[-32.9908,-71.4936],[-32.9991,-71.4913],
-      [-33.0075,-71.4905],[-33.0089,-71.5568]
-    ];
-    var sectorCM = [{
-      nombre: "Valparaíso",
-      coordsMapbox: VALPO_COORDS.map(function(c){ return [c[1], c[0]]; }),
-      coordsLeaf: VALPO_COORDS,
-      datos: {
-        pob: rs["total_pers"] || 0,
-        viv: rs["total_vivi"] || 0,
-        hom: rs["hombres"] || 0,
-        muj: rs["mujeres"] || 0
-      },
-      colIdx: 1
-    }];
-    sectoresActivos = sectorCM;
-    sectorActivo = 0;
-    mostrarViz(sectorCM);
+    var datosCM={pob:rs["total_pers"]||0,viv:rs["total_vivi"]||0,hom:rs["hombres"]||0,muj:rs["mujeres"]||0};
+
+    cargarUvGeo().then(function(geoDataUV){
+      var todosPoligonos=[];
+      for(var key in geoDataUV){
+        var entry=geoDataUV[key];
+        if(!entry||!entry.coords||entry.coords.length<3) continue;
+        var valid=entry.coords.filter(function(c){
+          return Array.isArray(c)&&c.length>=2&&!isNaN(c[0])&&!isNaN(c[1])&&isFinite(c[0])&&isFinite(c[1]);
+        });
+        if(valid.length>=3) todosPoligonos.push(valid);
+      }
+
+      if(!todosPoligonos.length){
+        return cargarSbGeo().then(function(geoDataSB){
+          var polsSB=[];
+          for(var key in geoDataSB){
+            var entry=geoDataSB[key];
+            if(!entry||!entry.coords||entry.coords.length<3) continue;
+            var valid=entry.coords.filter(function(c){
+              return Array.isArray(c)&&c.length>=2&&!isNaN(c[0])&&!isNaN(c[1])&&isFinite(c[0])&&isFinite(c[1]);
+            });
+            if(valid.length>=3) polsSB.push(valid);
+          }
+          return polsSB;
+        });
+      }
+      return Promise.resolve(todosPoligonos);
+
+    }).then(function(poligonos){
+      if(!poligonos||!poligonos.length){
+        document.getElementById("viz-wrapper").style.display="none";
+        return;
+      }
+
+      // Calcular centro general para el mapa
+      var todosLng=[], todosLat=[];
+      poligonos.forEach(function(pol){
+        pol.forEach(function(c){ todosLat.push(c[0]); todosLng.push(c[1]); });
+      });
+      var centroLng=(Math.min.apply(null,todosLng)+Math.max.apply(null,todosLng))/2;
+      var centroLat=(Math.min.apply(null,todosLat)+Math.max.apply(null,todosLat))/2;
+
+      // Mostrar mapa comunal con múltiples polígonos
+      document.getElementById("viz-wrapper").style.display="block";
+      document.getElementById("btn-toggle-3d").style.display="none";
+      document.getElementById("btn-toggle-area").style.display="none";
+      document.getElementById("ciudad-ui").innerHTML="";
+
+      // Inicializar Mapbox con todos los polígonos
+      if(mbMap){mbMap.remove();mbMap=null;mbInited=false;}
+      mbInited=true;
+      mbMap=new mapboxgl.Map({
+        container:"mapbox-map",
+        style:"mapbox://styles/mapbox/satellite-streets-v12",
+        center:[centroLng,centroLat],
+        zoom:11,pitch:0,bearing:0,antialias:true
+      });
+
+      mbMap.on("load",function(){
+        var map=this;
+        map.addSource("mapbox-dem",{type:"raster-dem",url:"mapbox://mapbox.mapbox-terrain-dem-v1",tileSize:512,maxzoom:14});
+        map.setTerrain({source:"mapbox-dem",exaggeration:1.5});
+        map.setFog({color:"rgb(180,210,240)","high-color":"rgb(100,160,220)","horizon-blend":0.08,"space-color":"rgb(30,50,100)","star-intensity":0.1});
+
+        // MultiPolygon con todos los polígonos de UVs
+        var features=poligonos.map(function(pol){
+          return {
+            type:"Feature",
+            properties:{},
+            geometry:{
+              type:"Polygon",
+              coordinates:[pol.map(function(c){return[c[1],c[0]];})]
+            }
+          };
+        });
+
+        map.addSource("cm-source",{
+          type:"geojson",
+          data:{type:"FeatureCollection",features:features}
+        });
+
+        map.addLayer({
+          id:"cm-fill",
+          source:"cm-source",
+          type:"fill",
+          paint:{
+            "fill-color":"#2563eb",
+            "fill-opacity":0.15
+          }
+        });
+
+        map.addLayer({
+          id:"cm-line",
+          source:"cm-source",
+          type:"line",
+          paint:{
+            "line-color":"#2563eb",
+            "line-width":1.2,
+            "line-opacity":0.7
+          }
+        });
+
+        map.flyTo({
+          center:[centroLng,centroLat],
+          zoom:11.5,pitch:45,bearing:-10,
+          duration:3000,curve:1.5
+        });
+      });
+
+      // Leaflet con todos los polígonos
+      initLeaflet();
+      leafPolys.forEach(function(p){mapaLeaflet.removeLayer(p);});
+      leafPolys=[];
+      var bounds=[];
+      poligonos.forEach(function(pol){
+        var latlngs=pol.map(function(c){return[c[0],c[1]];});
+        var poly=L.polygon(latlngs,{
+          color:"#2563eb",weight:1.2,opacity:0.7,
+          fillColor:"#2563eb",fillOpacity:0.12
+        }).addTo(mapaLeaflet);
+        leafPolys.push(poly);
+        latlngs.forEach(function(c){bounds.push(c);});
+      });
+      if(bounds.length) mapaLeaflet.fitBounds(bounds,{padding:[30,30],maxZoom:13});
+      setTimeout(function(){mapaLeaflet.invalidateSize();},200);
+
+      // Panel de datos
+      
+     
+
+      sectoresActivos=[];sectorActivo=0;
+
+    }).catch(function(){
+      document.getElementById("viz-wrapper").style.display="none";
+    });
   }
-});  // ← cierre del addEventListener("click", async function(){...})
+});
 
 function prepararAnalytics(unidades, metricas, annio) {
   av2.unidades   = unidades;
   av2.metricas   = metricas;
   av2.annio      = annio;
-  av2.compLoaded = false;
-  av2.evolLoaded = false;
+  av2.searchId   = (av2.searchId || 0) + 1;
   av2.idxActivo  = unidades.length === 1 ? 0 : -1;
   ['tab-indicadores','tab-poblacion','tab-vivienda','tab-comparativo','tab-evolucion'].forEach(function(id){ _resetPanelContenido(id); });
   _av2El('av2-title', av2.getNombre());
@@ -1192,9 +1292,226 @@ function renderEmpleo(){var el=document.getElementById('pob-sub-empleo');if(!el|
 
 function renderTabVivienda(){_ensurePanel('tab-vivienda','<div id="viv-kpi-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;"></div><div id="viv-hog-row" style="display:grid;gap:14px;margin-bottom:0;"></div><div id="viv-pct-hog" style="display:none;margin-bottom:14px;"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;"><div class="av2-card"><div class="ctitle">Tipo de vivienda</div><div id="viv-tipo"></div></div><div class="av2-card"><div class="ctitle">Tenencia</div><div id="viv-tenencia"></div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;"><div class="av2-card"><div class="ctitle">Déficit habitacional</div><div id="viv-deficit"></div></div><div class="av2-card"><div class="ctitle">Materiales de paredes</div><div id="viv-paredes"></div></div></div>');var totalVivi=avSv('total_vivi')||avSv('viv_particulares'),vivOcup=avSv('viv_particulares_ocupadas');var vivDesoc=avSv('viv_particulares_desocupadas'),vivColect=avSv('viv_colectivas'),totalPers=avSv('total_pers');var totalHog=avSv('total_hogares')||avSv('n_hogares');var hogUni=avSv('hog_unipersonal')||avSv('n_hog_unipersonales');var hogNinos=avSv('hog_con_ninos')||avSv('n_hog_con_ninos');var hogMay=avSv('hog_personas_mayores')||avSv('n_hog_personas_mayores');var promPHog=(totalPers&&totalHog)?(totalPers/totalHog):avSv('promedio_pers_hog');var promHViv=(totalHog&&vivOcup)?(totalHog/vivOcup):avSv('promedio_hog_viv');var k1=[];if(totalVivi)k1.push(avKpi('Viviendas censadas',avFmt(totalVivi),'','#1d4ed8'));if(vivOcup)k1.push(avKpi('Viviendas ocupadas',avFmt(vivOcup),totalVivi?avPct(vivOcup,totalVivi)+'% del total':'','#16a34a'));if(vivDesoc)k1.push(avKpi('Viviendas desocupadas',avFmt(vivDesoc),totalVivi?avPct(vivDesoc,totalVivi)+'% del total':'','#dc2626'));if(vivColect)k1.push(avKpi('Viviendas colectivas',avFmt(vivColect),'','#64748b'));_av2Grid('viv-kpi-row',Math.min(k1.length||1,4));_av2El('viv-kpi-row',k1.join(''));var k2=[];if(totalHog)k2.push(avKpi('Hogares censados',avFmt(totalHog),'','#1e40af'));if(promPHog)k2.push(avKpi('Personas / hogar',promPHog.toFixed(1),'promedio','#0891b2'));if(hogUni&&totalHog)k2.push(avKpi('Hogares unipersonales',avPct(hogUni,totalHog)+'%',avFmt(hogUni)+' hogares','#7c3aed'));if(promHViv)k2.push(avKpi('Hogares / vivienda',promHViv.toFixed(1),'promedio (ocup.)','#d97706'));var v2=document.getElementById('viv-hog-row');if(v2){if(k2.length){v2.style.gridTemplateColumns='repeat('+Math.min(k2.length,4)+',1fr)';v2.style.marginBottom='14px';v2.innerHTML=k2.join('');}else{v2.innerHTML='';v2.style.marginBottom='0';}}var pctHog=document.getElementById('viv-pct-hog'),pi=[];if(hogUni&&totalHog)pi.push({l:'Hogares unipersonales',v:hogUni,col:'#7c3aed'});if(hogNinos&&totalHog)pi.push({l:'Hogares con niños/as',v:hogNinos,col:'#2563eb'});if(hogMay&&totalHog)pi.push({l:'Hogares personas mayores',v:hogMay,col:'#d97706'});if(pctHog){if(pi.length&&totalHog){var maxP=Math.max.apply(null,pi.map(function(p){return p.v;}));pctHog.style.display='block';pctHog.innerHTML='<div class="av2-card"><div class="ctitle">Composición de hogares</div>'+pi.map(function(p){var pv=avPct(p.v,totalHog);return'<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px;"><div style="width:190px;color:#64748b;">'+p.l+'</div><div style="flex:1;height:13px;background:#e2e8f0;border-radius:7px;overflow:hidden;"><div style="width:'+Math.max(3,Math.round(p.v/maxP*100))+'%;height:100%;background:'+p.col+';border-radius:7px;"></div></div><div style="width:48px;text-align:right;font-weight:700;color:#1e293b;">'+pv+'%</div><div style="width:60px;text-align:right;font-size:11px;color:#94a3b8;">'+avFmt(p.v)+'</div></div>';}).join('')+'</div>';}else{pctHog.style.display='none';pctHog.innerHTML='';}}buildBars([{v:avSv('viv_casa'),l:'Casa',col:'#2563eb'},{v:avSv('viv_depto'),l:'Departamento',col:'#0891b2'},{v:avSv('viv_pieza'),l:'Pieza',col:'#7c3aed'},{v:avSv('viv_mediagua'),l:'Mediagua',col:'#d97706'},{v:avSv('viv_otro'),l:'Otro tipo',col:'#94a3b8'}],'viv-tipo');buildBars([{v:avSv('ten_propia_pagada'),l:'Propia pagada',col:'#1d4ed8'},{v:avSv('ten_propia_pagandose'),l:'Propia pagándose',col:'#2563eb'},{v:avSv('ten_arrendada_contrato'),l:'Arrendada (contrato)',col:'#16a34a'},{v:avSv('ten_arrendada_sin_contrato'),l:'Arrendada (s/contrato)',col:'#65a30d'},{v:avSv('ten_cedida_familiar'),l:'Cedida familiar',col:'#d97706'},{v:avSv('ten_otro'),l:'Otro',col:'#94a3b8'}],'viv-tenencia');buildBars([{v:avSv('n_viv_hacinadas'),l:'Viviendas hacinadas',col:'#dc2626'},{v:avSv('n_viv_irrecuperables'),l:'Irrecuperables',col:'#b91c1c'},{v:avSv('n_hog_allegados'),l:'Hogares allegados',col:'#ea580c'},{v:avSv('n_nucleos_hacinados'),l:'Núcleos hacinados',col:'#d97706'}],'viv-deficit');buildBars([{v:avSv('par_hormigon'),l:'Hormigón',col:'#475569'},{v:avSv('par_albanileria'),l:'Albañilería',col:'#64748b'},{v:avSv('par_tabique_forrado'),l:'Tabique forrado',col:'#2563eb'},{v:avSv('par_tabique_sin_forro'),l:'Tabique s/forro',col:'#7c3aed'},{v:avSv('par_artesanal'),l:'Artesanal',col:'#d97706'},{v:avSv('par_precarios'),l:'Precarios',col:'#dc2626'}],'viv-paredes');}
 
-async function renderTabComparativo(){if(av2.compLoaded)return;av2.compLoaded=true;_ensurePanel('tab-comparativo','<div id="comp-loading" class="av2-loading"><div class="av2-spinner"></div>Cargando comparativo...</div><div id="comp-content" style="display:none;"></div>');var cL=document.getElementById('comp-loading'),cC=document.getElementById('comp-content');var email=sessionStorage.getItem('userEmail')||localStorage.getItem('userEmail');var annio=av2.annio,MET=['total_pers','hombres','mujeres','total_vivi'];var sN=new Set(modo==='uv'?uvSeleccionadas.map(function(u){return String(u.cod);}):av2.unidades.map(function(u){return u.nombre;}));try{var peers=[],label='';if(modo==='uv'){label='Todas las UVs · ordenadas por población';var res=await fetch(ENDPOINT_CONSULTA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,uv:[],sb:[],omz:[],annios:[parseInt(annio)],metricas:MET})});var data=await res.json();var uvMap={};data.forEach(function(r){var cod=r.id_uv||(r.uv&&r.uv.cod_uv);if(!cod)return;if(!uvMap[cod])uvMap[cod]={nombre:String(cod),total_pers:0,total_vivi:0,hombres:0,mujeres:0};MET.forEach(function(m){uvMap[cod][m]=(uvMap[cod][m]||0)+Number(r[m]||0);});});peers=Object.values(uvMap);}else if(modo==='sb'){label='Sectores Barriales en la misma OMZ';var omzIds=new Set();av2.unidades.forEach(function(u){u.rawData.forEach(function(r){if(r.uv&&r.uv.sb&&r.uv.sb.omz)omzIds.add(Number(r.uv.sb.omz.id));});});var sbsEnOMZ=omzIds.size>0?SB_full.filter(function(s){return omzIds.has(Number(s.omz_id));}):SB_full;if(sbsEnOMZ.length){var res=await fetch(ENDPOINT_CONSULTA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,uv:[],sb:sbsEnOMZ.map(function(s){return Number(s.id);}),omz:[],annios:[parseInt(annio)],metricas:MET})});var data=await res.json();sbsEnOMZ.forEach(function(sb){var f=data.filter(function(r){return r.uv&&r.uv.sb&&String(r.uv.sb.id)===String(sb.id);});var row={nombre:sb.nombre||String(sb.id),total_pers:0,total_vivi:0};f.forEach(function(r){MET.forEach(function(m){row[m]=(row[m]||0)+Number(r[m]||0);});});peers.push(row);});}}else if(modo==='omz'){label='Todas las OMZ';if(OMZ_full.length){var res=await fetch(ENDPOINT_CONSULTA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,uv:[],sb:[],omz:OMZ_full.map(function(o){return Number(o.id);}),annios:[parseInt(annio)],metricas:MET})});var data=await res.json();OMZ_full.forEach(function(omz){var f=data.filter(function(r){return r.uv&&r.uv.sb&&r.uv.sb.omz&&String(r.uv.sb.omz.id)===String(omz.id);});var row={nombre:omz.nombre||String(omz.id),total_pers:0,total_vivi:0};f.forEach(function(r){MET.forEach(function(m){row[m]=(row[m]||0)+Number(r[m]||0);});});peers.push(row);});}}else{label='Nivel comunal';av2.unidades.forEach(function(u){peers.push({nombre:u.nombre,total_pers:Number(u.filaAgregada.total_pers||0)});});}peers.sort(function(a,b){return b.total_pers-a.total_pers;});var maxP=Math.max.apply(null,peers.map(function(p){return p.total_pers;}))||1;var totalPobComp=peers.reduce(function(a,p){return a+p.total_pers;},0);if(cC)cC.innerHTML='<div style="font-size:12px;color:#64748b;margin-bottom:12px;">'+label+' · '+peers.length+' unidades · Año '+annio+'</div><div class="av2-card"><div class="ctitle">Comparativo — Población total</div><div style="max-height:480px;overflow-y:auto;">'+peers.map(function(p){var iS=sN.has(p.nombre);var w=Math.max(1,Math.round(p.total_pers/maxP*100));var pct=avPct(p.total_pers,totalPobComp);var col=iS?'#2563eb':'#bfdbfe';var barH=iS?'18px':'13px';var lblCol=iS?'color:#111827;font-weight:700;':'color:#374151;font-weight:500;';var numCol=iS?'color:#111827;font-weight:700;':'color:#374151;font-weight:500;';return'<div data-selected="'+(iS?'1':'0')+'" style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;"><div style="width:50px;text-align:right;flex-shrink:0;'+lblCol+'" title="'+p.nombre+'">'+(iS?'<span style="color:#2563eb;">▶</span> ':'')+p.nombre+'</div><div style="flex:1;height:'+barH+';background:#f1f5f9;border-radius:7px;overflow:hidden;"><div style="width:'+w+'%;height:100%;background:'+col+';border-radius:7px;'+(iS?'box-shadow:0 0 8px rgba(37,99,235,0.35);':'')+'"></div></div><div style="width:52px;text-align:right;'+numCol+'">'+avFmt(p.total_pers)+'</div><div style="width:38px;text-align:right;font-size:11px;color:#6b7280;">'+pct+'%</div></div>';}).join('')+'</div></div>';if(cL)cL.style.display='none';if(cC)cC.style.display='block';setTimeout(function(){var compContent=document.getElementById('comp-content');if(!compContent)return;var selected=compContent.querySelector('[data-selected="1"]');if(selected){var wrapper=compContent.querySelector('[style*="max-height"]');if(wrapper){var targetTop=selected.offsetTop-wrapper.offsetTop-(wrapper.clientHeight/2)+(selected.clientHeight/2);var startTop=wrapper.scrollTop;var distance=targetTop-startTop;var duration=800;var start=null;function easeInOut(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}function step(timestamp){if(!start)start=timestamp;var progress=Math.min((timestamp-start)/duration,1);wrapper.scrollTop=startTop+distance*easeInOut(progress);if(progress<1)requestAnimationFrame(step);}requestAnimationFrame(step);}}},300);}catch(e){if(cL)cL.innerHTML='<div style="color:#dc2626;font-size:13px;">Error: '+e.message+'</div>';}}
+async function renderTabComparativo(){
+  var panel=document.getElementById('tab-comparativo');
+  if(!panel)return;
+  if(panel.getAttribute('data-sid')==String(av2.searchId))return;
+  panel.setAttribute('data-sid',av2.searchId);
+  var sid=av2.searchId;
 
-async function renderTabEvolucion(){if(av2.evolLoaded)return;av2.evolLoaded=true;_ensurePanel('tab-evolucion','<div id="evol-loading" class="av2-loading"><div class="av2-spinner"></div>Cargando datos históricos...</div><div id="evol-content" style="display:none;"></div>');var eL=document.getElementById('evol-loading'),eC=document.getElementById('evol-content');var email=sessionStorage.getItem('userEmail')||localStorage.getItem('userEmail');try{var rC=await fetch('/censo/api/censos/');var censos=await rC.json();var annios=censos.map(function(c){return c.annio;}).sort();if(!annios.length){if(eL)eL.innerHTML='<div style="color:#94a3b8;font-size:13px;">No hay años disponibles.</div>';return;}var METR_EVOL=['total_pers','total_vivi','viv_particulares','total_hogares','hombres','mujeres','edad_0a5','edad_6a14','edad_15a64','edad_64ymas','edad_0_a_5','edad_6_a_13','edad_14_a_17','edad_18_a_24','edad_25_a_44','edad_45_a_59','edad_60_o_mas'];var body={email:email,annios:[],metricas:METR_EVOL};if(modo==='uv'){body.uv=uvSeleccionadas.map(function(u){return u.cod;});body.sb=[];body.omz=[];}else if(modo==='sb'){body.uv=[];body.sb=Array.from(document.querySelectorAll('.filtro-checkbox:checked')).map(function(c){return Number(c.value);});body.omz=[];}else if(modo==='omz'){body.uv=[];body.sb=[];body.omz=Array.from(document.querySelectorAll('.filtro-checkbox:checked')).map(function(c){return Number(c.value);});}else{body.uv=[];body.sb=[];body.omz=[];}var pA={};for(var ai=0;ai<annios.length;ai++){var thisAnio=annios[ai];var bodyA=Object.assign({},body,{annios:[Number(thisAnio)]});try{var resA=await fetch(ENDPOINT_CONSULTA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bodyA)});var dataA=await resA.json();if(!Array.isArray(dataA)||!dataA.length)continue;var acc={total_pers:0,total_vivi:0,total_hogares:0,hombres:0,mujeres:0,jov:0,may:0};dataA.forEach(function(r){acc.total_pers+=Number(r.total_pers||0);acc.total_vivi+=Number(r.total_vivi||0)||Number(r.viv_particulares||0);acc.total_hogares+=Number(r.total_hogares||0);acc.hombres+=Number(r.hombres||0);acc.mujeres+=Number(r.mujeres||0);acc.jov+=Number(r.edad_0a5||0)+Number(r.edad_6a14||0)+Number(r.edad_0_a_5||0)+Number(r.edad_6_a_13||0);acc.may+=Number(r.edad_64ymas||0)+Number(r.edad_60_o_mas||0);});pA[thisAnio]=acc;}catch(ignore){}}var aC=annios.filter(function(a){return pA[a]&&pA[a].total_pers>0;});if(!aC.length){if(eL)eL.innerHTML='<div style="background:#fef3c7;border-radius:8px;padding:12px;font-size:13px;color:#92400e;">⚠ No se encontraron datos para los años disponibles con los filtros actuales.</div>';return;}function graficoBars(titulo,valores,colorActivo,colorPasado){if(!valores||!valores.length)return'';var ultimo=valores[valores.length-1];var primero=valores[0];var diff=primero.v>0?((ultimo.v-primero.v)/primero.v*100):0;var diffStr=(diff>=0?'▲ +':'▼ ')+Math.abs(diff).toFixed(1)+'%';var diffCol=diff>=0?'#16a34a':'#dc2626';var diffBg=diff>=0?'#dcfce7':'#fee2e2';var W=160,H=80,PL=10,PR=10,n=valores.length;var bW=Math.floor((W-PL-PR-(n-1)*6)/n);var maxV=Math.max.apply(null,valores.map(function(x){return x.v;}))||1;var svgContent='';valores.forEach(function(d,i){var bH=Math.max(4,Math.round(d.v/maxV*(H-30)));var x=PL+i*(bW+6);var y=H-bH-20;var cx=x+bW/2;var isLast=i===n-1;svgContent+='<rect x="'+x+'" y="'+y+'" width="'+bW+'" height="'+bH+'" rx="3" fill="'+(isLast?colorActivo:colorPasado)+'"/><text x="'+cx+'" y="'+(y-4)+'" text-anchor="middle" font-size="8" font-weight="700" font-family="Sora,sans-serif" fill="'+(isLast?colorActivo:colorPasado)+'">'+Math.round(d.v).toLocaleString('es-CL')+'</text><text x="'+cx+'" y="'+(H-4)+'" text-anchor="middle" font-size="8" font-family="Sora,sans-serif" fill="#94a3b8">'+d.a+'</text>';});var spark='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block;">'+svgContent+'</svg>';return'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;"><div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">'+titulo+'</div><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px;"><div><div style="font-size:26px;font-weight:700;color:#1e293b;line-height:1;">'+avFmt(ultimo.v)+'</div><div style="font-size:10px;color:#94a3b8;margin-top:3px;">'+ultimo.a+(primero.a!==ultimo.a?' · antes: '+avFmt(primero.v):'')+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;"><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:'+diffBg+';color:'+diffCol+';">'+diffStr+'</span>'+spark+'</div></div></div>';}function graficoArea(titulo,valores,colorArea,colorLinea,fmt){if(!valores||valores.length<2)return'';var ultimo=valores[valores.length-1];var primero=valores[0];var diff=primero.v>0?((ultimo.v-primero.v)/primero.v*100):0;var diffStr=(diff>=0?'▲ +':'▼ ')+Math.abs(diff).toFixed(1)+'%';var diffCol=diff>=0?'#16a34a':'#dc2626';var diffBg=diff>=0?'#dcfce7':'#fee2e2';var ultimoStr=fmt?fmt(ultimo.v):ultimo.v.toFixed(1).replace('.',',')+'%';var primeroStr=fmt?fmt(primero.v):primero.v.toFixed(1).replace('.',',')+'%';var W=160,H=70,PL=14,PR=14,n=valores.length;var vals=valores.map(function(x){return x.v;});var minV=Math.min.apply(null,vals),maxV=Math.max.apply(null,vals);var rng=maxV-minV||0.01;function px(i){return PL+Math.round(i/(n-1)*(W-PL-PR));}function py(v){return 8+Math.round((1-(v-minV)/rng)*(H-30));}var pts=valores.map(function(d,i){return px(i)+','+py(d.v);}).join(' ');var poly=px(0)+','+(H-18)+' '+pts+' '+px(n-1)+','+(H-18);var gradId='sg'+titulo.replace(/[^a-zA-Z0-9]/g,'');var svgContent='<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+colorLinea+'" stop-opacity="0.3"/><stop offset="100%" stop-color="'+colorLinea+'" stop-opacity="0.02"/></linearGradient></defs><polygon points="'+poly+'" fill="url(#'+gradId+')"/><polyline points="'+pts+'" fill="none" stroke="'+colorLinea+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';valores.forEach(function(d,i){var cx=px(i),cy=py(d.v);svgContent+='<circle cx="'+cx+'" cy="'+cy+'" r="3" fill="'+colorLinea+'" stroke="white" stroke-width="1.5"/><text x="'+cx+'" y="'+(H-4)+'" text-anchor="middle" font-size="8" font-family="Sora,sans-serif" fill="#94a3b8">'+d.a+'</text>';});var spark='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block;">'+svgContent+'</svg>';return'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;"><div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">'+titulo+'</div><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px;"><div><div style="font-size:26px;font-weight:700;color:#1e293b;line-height:1;">'+ultimoStr+'</div><div style="font-size:10px;color:#94a3b8;margin-top:3px;">'+ultimo.a+(primero.a!==ultimo.a?' · antes: '+primeroStr:'')+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;"><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:'+diffBg+';color:'+diffCol+';">'+diffStr+'</span>'+spark+'</div></div></div>';}var dPob=aC.map(function(a){return{a:a,v:pA[a].total_pers};});var dViv=aC.map(function(a){return{a:a,v:pA[a].total_vivi};});var dPctJov=aC.map(function(a){var t=pA[a].total_pers||1;return{a:a,v:pA[a].jov/t*100};});var dPctMay=aC.map(function(a){var t=pA[a].total_pers||1;return{a:a,v:pA[a].may/t*100};});var dIdxEnv=aC.map(function(a){var j=pA[a].jov||1;return{a:a,v:pA[a].may/j*100};});var fmtPct=function(v){return v.toFixed(1).replace('.',',')+'%';};var fmtIdx=function(v){return v.toFixed(1).replace('.',',');};var css='<style>.evol-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}</style>';var g1=graficoBars('Población censada',dPob,'#e91e8c','#e8b4d0');var g2=graficoArea('% personas 0 a 14 años',dPctJov,'#b8cce8','#1d4ed8',fmtPct);var g3=graficoBars('Viviendas censadas',dViv,'#3b5fa0','#8da9cc');var g4=graficoArea('% personas 60 años o más',dPctMay,'#2a4aa0','#e91e8c',fmtPct);var dMuj=aC.map(function(a){return{a:a,v:pA[a].mujeres};});var g7=graficoBars('Mujeres censadas',dMuj,'#be185d','#f9a8d4');var g6=graficoArea('Índice de envejecimiento',dIdxEnv,'#2a4aa0','#e91e8c',fmtIdx);var row1='<div class="evol-grid">'+g1+g2+g3+'</div>';var row2='<div class="evol-grid" style="margin-top:12px;">'+g4+g7+g6+'</div>';var dH2='';for(var i=1;i<aC.length;i++){var a1=aC[i-1],a2=aC[i];var dp=pA[a1].total_pers>0?((pA[a2].total_pers-pA[a1].total_pers)/pA[a1].total_pers*100).toFixed(1):'—';var dv=pA[a1].total_vivi>0?((pA[a2].total_vivi-pA[a1].total_vivi)/pA[a1].total_vivi*100).toFixed(1):'—';var colP=Number(dp)>=0?'#16a34a':'#dc2626',arP=Number(dp)>=0?'▲':'▼';var colV=Number(dv)>=0?'#16a34a':'#dc2626',arV=Number(dv)>=0?'▲':'▼';dH2+='<div style="display:flex;gap:16px;align-items:center;padding:9px 0;border-bottom:1px solid #e2e8f0;font-size:13px;flex-wrap:wrap;"><div style="width:90px;color:#64748b;font-weight:600;">'+a1+' → '+a2+'</div><div>Población: <span style="color:'+colP+';font-weight:700;">'+arP+' '+dp+'%</span> <span style="color:#94a3b8;">('+avFmt(pA[a2].total_pers-pA[a1].total_pers)+')</span></div><div>Viviendas: <span style="color:'+colV+';font-weight:700;">'+arV+' '+dv+'%</span> <span style="color:#94a3b8;">('+avFmt(pA[a2].total_vivi-pA[a1].total_vivi)+')</span></div></div>';}if(eC)eC.innerHTML=css+row1+row2+'<div class="av2-card" style="margin-top:14px;"><div class="ctitle">Variación intercensal</div>'+(dH2||'<div style="color:#94a3b8;font-size:12px;">Sin suficientes años para comparar.</div>')+'</div>';if(eL)eL.style.display='none';if(eC)eC.style.display='block';}catch(e){if(eL)eL.innerHTML='<div style="color:#dc2626;font-size:13px;">Error: '+e.message+'</div>';}}
+  var VARS_COMP=[
+    {value:'total_pers',   label:'Población total'},
+    {value:'hombres',      label:'Hombres'},
+    {value:'mujeres',      label:'Mujeres'},
+    {value:'total_vivi',   label:'Viviendas totales'},
+    {value:'viv_particulares_ocupadas', label:'Viviendas ocupadas'},
+    {value:'viv_particulares_desocupadas', label:'Viviendas desocupadas'},
+    {value:'viv_casa',     label:'Casas'},
+    {value:'viv_depto',    label:'Departamentos'},
+    {value:'viv_mediagua', label:'Mediaguas'},
+    {value:'n_viv_hacinadas', label:'Viviendas hacinadas'},
+    {value:'n_viv_irrecuperables', label:'Irrecuperables'},
+    {value:'ocupadas',     label:'Ocupados/as'},
+    {value:'desocupadas',  label:'Desocupados/as'},
+    {value:'ten_propia_pagada', label:'Vivienda propia pagada'},
+    {value:'ten_arrendada_contrato', label:'Arrendada con contrato'},
+    {value:'n_fuente_agua_publica', label:'Agua red pública'},
+    {value:'n_serv_hig_alc_dentro', label:'Alcantarillado dentro'},
+    {value:'n_fuente_elect_publica', label:'Electricidad red pública'},
+  ];
+
+  // Variable activa (guardar en el panel)
+  var varActiva = panel._varActiva || 'total_pers';
+
+  // Selector de variable
+  var selectorHtml = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">'
+    +'<span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Variable:</span>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+    + VARS_COMP.map(function(v){
+        return '<button onclick="cambiarVarComp(\''+v.value+'\')" '
+          +'id="btn-comp-'+v.value+'" '
+          +'style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid #c7d9f8;'
+          +'background:'+(v.value===varActiva?'#2563eb':'white')+';'
+          +'color:'+(v.value===varActiva?'white':'#475569')+';'
+          +'font-family:var(--censo-font);cursor:pointer;font-weight:600;transition:all 0.15s;">'
+          +v.label+'</button>';
+      }).join('')
+    +'</div></div>'
+    +'<div id="comp-loading" class="av2-loading"><div class="av2-spinner"></div>Cargando comparativo...</div>'
+    +'<div id="comp-content" style="display:none;"></div>';
+
+  panel.innerHTML = selectorHtml;
+  panel._varActiva = varActiva;
+
+  // Función global para cambiar variable
+  window.cambiarVarComp = function(val){
+    var p=document.getElementById('tab-comparativo');
+    if(!p)return;
+    p._varActiva=val;
+    // Actualizar botones
+    VARS_COMP.forEach(function(v){
+      var b=document.getElementById('btn-comp-'+v.value);
+      if(!b)return;
+      b.style.background=v.value===val?'#2563eb':'white';
+      b.style.color=v.value===val?'white':'#475569';
+    });
+    cargarDatosComp(val, sid);
+  };
+
+  cargarDatosComp(varActiva, sid);
+
+  async function cargarDatosComp(varSelec, currentSid){
+    var cL=document.getElementById('comp-loading');
+    var cC=document.getElementById('comp-content');
+    if(cL){cL.style.display='block';}
+    if(cC){cC.style.display='none'; cC.innerHTML='';}
+
+    var varInfo = VARS_COMP.find(function(v){return v.value===varSelec;}) || {label:varSelec};
+    var MET=['total_pers', varSelec].filter(function(v,i,a){return a.indexOf(v)===i;});
+    var email=sessionStorage.getItem('userEmail')||localStorage.getItem('userEmail');
+    var annio=av2.annio;
+    var sN=new Set(modo==='uv'?uvSeleccionadas.map(function(u){return String(u.cod);}):av2.unidades.map(function(u){return u.nombre;}));
+
+    try{
+      var peers=[], label='';
+
+      if(modo==='uv'){
+        label='Todas las UVs · ordenadas por '+varInfo.label;
+        var res=await fetch(ENDPOINT_CONSULTA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,uv:[],sb:[],omz:[],annios:[parseInt(annio)],metricas:MET})});
+        var data=await res.json();
+        var uvMap={};
+        data.forEach(function(r){
+          var cod=r.id_uv||(r.uv&&r.uv.cod_uv);
+          if(!cod)return;
+          if(!uvMap[cod])uvMap[cod]={nombre:String(cod),total_pers:0};
+          uvMap[cod][varSelec]=(uvMap[cod][varSelec]||0)+Number(r[varSelec]||0);
+          uvMap[cod].total_pers=(uvMap[cod].total_pers||0)+Number(r.total_pers||0);
+        });
+        peers=Object.values(uvMap);
+
+      }else if(modo==='sb'){
+        label='Sectores Barriales · '+varInfo.label;
+        var omzIds=new Set();
+        av2.unidades.forEach(function(u){u.rawData.forEach(function(r){if(r.uv&&r.uv.sb&&r.uv.sb.omz)omzIds.add(Number(r.uv.sb.omz.id));});});
+        var sbsEnOMZ=omzIds.size>0?SB_full.filter(function(s){return omzIds.has(Number(s.omz_id));}):SB_full;
+        if(sbsEnOMZ.length){
+          var res=await fetch(ENDPOINT_CONSULTA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,uv:[],sb:sbsEnOMZ.map(function(s){return Number(s.id);}),omz:[],annios:[parseInt(annio)],metricas:MET})});
+          var data=await res.json();
+          sbsEnOMZ.forEach(function(sb){
+            var f=data.filter(function(r){return r.uv&&r.uv.sb&&String(r.uv.sb.id)===String(sb.id);});
+            var row={nombre:sb.nombre||String(sb.id)};
+            MET.forEach(function(m){row[m]=f.reduce(function(a,r){return a+Number(r[m]||0);},0);});
+            peers.push(row);
+          });
+        }
+
+      }else if(modo==='omz'){
+        label='Todas las OMZ · '+varInfo.label;
+        if(OMZ_full.length){
+          var res=await fetch(ENDPOINT_CONSULTA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,uv:[],sb:[],omz:OMZ_full.map(function(o){return Number(o.id);}),annios:[parseInt(annio)],metricas:MET})});
+          var data=await res.json();
+          OMZ_full.forEach(function(omz){
+            var f=data.filter(function(r){return r.uv&&r.uv.sb&&r.uv.sb.omz&&String(r.uv.sb.omz.id)===String(omz.id);});
+            var row={nombre:omz.nombre||String(omz.id)};
+            MET.forEach(function(m){row[m]=f.reduce(function(a,r){return a+Number(r[m]||0);},0);});
+            peers.push(row);
+          });
+        }
+
+      }else{
+        label='Nivel comunal';
+        av2.unidades.forEach(function(u){
+          var row={nombre:u.nombre};
+          MET.forEach(function(m){row[m]=Number(u.filaAgregada[m]||0);});
+          peers.push(row);
+        });
+      }
+
+      peers.sort(function(a,b){return b[varSelec]-a[varSelec];});
+      var maxV=Math.max.apply(null,peers.map(function(p){return p[varSelec]||0;}))||1;
+      var totalV=peers.reduce(function(a,p){return a+(p[varSelec]||0);},0);
+
+      if(av2.searchId!==currentSid)return;
+
+      if(cC)cC.innerHTML=
+        '<div style="font-size:12px;color:#64748b;margin-bottom:12px;">'+label+' · '+peers.length+' unidades · Año '+annio+'</div>'
+        +'<div class="av2-card"><div class="ctitle">'+varInfo.label+' por unidad</div>'
+        +'<div style="max-height:480px;overflow-y:auto;">'
+        +peers.map(function(p){
+          var val=p[varSelec]||0;
+          var iS=sN.has(p.nombre);
+          var w=Math.max(1,Math.round(val/maxV*100));
+          var pct=totalV>0?(val/totalV*100).toFixed(1):'0.0';
+          var col=iS?'#2563eb':'#bfdbfe';
+          var barH=iS?'18px':'13px';
+          var lblCol=iS?'color:#111827;font-weight:700;':'color:#374151;font-weight:500;';
+          var numCol=iS?'color:#111827;font-weight:700;':'color:#374151;font-weight:500;';
+          return '<div data-selected="'+(iS?'1':'0')+'" style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;">'
+            +'<div style="width:50px;text-align:right;flex-shrink:0;'+lblCol+'" title="'+p.nombre+'">'+(iS?'<span style="color:#2563eb;">▶</span> ':'')+p.nombre+'</div>'
+            +'<div style="flex:1;height:'+barH+';background:#f1f5f9;border-radius:7px;overflow:hidden;">'
+            +'<div style="width:'+w+'%;height:100%;background:'+col+';border-radius:7px;'+(iS?'box-shadow:0 0 8px rgba(37,99,235,0.35);':'')+'"></div></div>'
+            +'<div style="width:52px;text-align:right;'+numCol+'">'+avFmt(val)+'</div>'
+            +'<div style="width:38px;text-align:right;font-size:11px;color:#6b7280;">'+pct+'%</div>'
+            +'</div>';
+        }).join('')
+        +'</div></div>';
+
+      if(cL)cL.style.display='none';
+      if(cC)cC.style.display='block';
+
+      // Scroll al seleccionado
+      setTimeout(function(){
+        var compContent=document.getElementById('comp-content');
+        if(!compContent)return;
+        var selected=compContent.querySelector('[data-selected="1"]');
+        if(selected){
+          var wrapper=compContent.querySelector('[style*="max-height"]');
+          if(wrapper){
+            var targetTop=selected.offsetTop-wrapper.offsetTop-(wrapper.clientHeight/2)+(selected.clientHeight/2);
+            var startTop=wrapper.scrollTop;
+            var distance=targetTop-startTop;
+            var duration=800;var start=null;
+            function easeInOut(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}
+            function step(timestamp){if(!start)start=timestamp;var progress=Math.min((timestamp-start)/duration,1);wrapper.scrollTop=startTop+distance*easeInOut(progress);if(progress<1)requestAnimationFrame(step);}
+            requestAnimationFrame(step);
+          }
+        }
+      },300);
+
+    }catch(e){
+      if(cL)cL.innerHTML='<div style="color:#dc2626;font-size:13px;">Error: '+e.message+'</div>';
+    }
+  }
+}
+
+async function renderTabEvolucion(){
+  var panel=document.getElementById('tab-evolucion');
+  if(!panel)return;
+  if(panel.getAttribute('data-sid')==String(av2.searchId))return;
+  panel.setAttribute('data-sid',av2.searchId);
+  var sid=av2.searchId;
+  panel.innerHTML='<div id="evol-loading" class="av2-loading"><div class="av2-spinner"></div>Cargando datos históricos...</div><div id="evol-content" style="display:none;"></div>';
+  
+  var eL=document.getElementById('evol-loading'),eC=document.getElementById('evol-content');
+  var email=sessionStorage.getItem('userEmail')||localStorage.getItem('userEmail');
+  try{var rC=await fetch('/censo/api/censos/');var censos=await rC.json();var annios=censos.map(function(c){return c.annio;}).sort();if(!annios.length){if(eL)eL.innerHTML='<div style="color:#94a3b8;font-size:13px;">No hay años disponibles.</div>';return;}var METR_EVOL=['total_pers','total_vivi','viv_particulares','total_hogares','hombres','mujeres','edad_0a5','edad_6a14','edad_15a64','edad_64ymas','edad_0_a_5','edad_6_a_13','edad_14_a_17','edad_18_a_24','edad_25_a_44','edad_45_a_59','edad_60_o_mas'];var body={email:email,annios:[],metricas:METR_EVOL};if(modo==='uv'){
+  var uvsEvol=av2.idxActivo===-1?uvSeleccionadas:uvSeleccionadas.filter(function(u,i){return i===av2.idxActivo;});
+  body.uv=uvsEvol.map(function(u){return u.cod;});body.sb=[];body.omz=[];
+}else if(modo==='sb'){
+  var sbsEvol=Array.from(document.querySelectorAll('.filtro-checkbox:checked'));
+  if(av2.idxActivo!==-1)sbsEvol=sbsEvol.filter(function(c,i){return i===av2.idxActivo;});
+  body.uv=[];body.sb=sbsEvol.map(function(c){return Number(c.value);});body.omz=[];
+}else if(modo==='omz'){
+  var omzsEvol=Array.from(document.querySelectorAll('.filtro-checkbox:checked'));
+  if(av2.idxActivo!==-1)omzsEvol=omzsEvol.filter(function(c,i){return i===av2.idxActivo;});
+  body.uv=[];body.sb=[];body.omz=omzsEvol.map(function(c){return Number(c.value);});
+}else{body.uv=[];body.sb=[];body.omz=[];}var pA={};for(var ai=0;ai<annios.length;ai++){var thisAnio=annios[ai];var bodyA=Object.assign({},body,{annios:[Number(thisAnio)]});try{var resA=await fetch(ENDPOINT_CONSULTA,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bodyA)});var dataA=await resA.json();if(!Array.isArray(dataA)||!dataA.length)continue;var acc={total_pers:0,total_vivi:0,total_hogares:0,hombres:0,mujeres:0,jov:0,may:0};dataA.forEach(function(r){acc.total_pers+=Number(r.total_pers||0);acc.total_vivi+=Number(r.total_vivi||0)||Number(r.viv_particulares||0);acc.total_hogares+=Number(r.total_hogares||0);acc.hombres+=Number(r.hombres||0);acc.mujeres+=Number(r.mujeres||0);acc.jov+=Number(r.edad_0a5||0)+Number(r.edad_6a14||0)+Number(r.edad_0_a_5||0)+Number(r.edad_6_a_13||0);acc.may+=Number(r.edad_64ymas||0)+Number(r.edad_60_o_mas||0);});pA[thisAnio]=acc;}catch(ignore){}}var aC=annios.filter(function(a){return pA[a]&&pA[a].total_pers>0;});if(!aC.length){if(eL)eL.innerHTML='<div style="background:#fef3c7;border-radius:8px;padding:12px;font-size:13px;color:#92400e;">⚠ No se encontraron datos para los años disponibles con los filtros actuales.</div>';return;}function graficoBars(titulo,valores,colorActivo,colorPasado){if(!valores||!valores.length)return'';var ultimo=valores[valores.length-1];var primero=valores[0];var diff=primero.v>0?((ultimo.v-primero.v)/primero.v*100):0;var diffStr=(diff>=0?'▲ +':'▼ ')+Math.abs(diff).toFixed(1)+'%';var diffCol=diff>=0?'#16a34a':'#dc2626';var diffBg=diff>=0?'#dcfce7':'#fee2e2';var W=160,H=80,PL=10,PR=10,n=valores.length;var bW=Math.floor((W-PL-PR-(n-1)*6)/n);var maxV=Math.max.apply(null,valores.map(function(x){return x.v;}))||1;var svgContent='';valores.forEach(function(d,i){var bH=Math.max(4,Math.round(d.v/maxV*(H-30)));var x=PL+i*(bW+6);var y=H-bH-20;var cx=x+bW/2;var isLast=i===n-1;svgContent+='<rect x="'+x+'" y="'+y+'" width="'+bW+'" height="'+bH+'" rx="3" fill="'+(isLast?colorActivo:colorPasado)+'"/><text x="'+cx+'" y="'+(y-4)+'" text-anchor="middle" font-size="8" font-weight="700" font-family="Sora,sans-serif" fill="'+(isLast?colorActivo:colorPasado)+'">'+Math.round(d.v).toLocaleString('es-CL')+'</text><text x="'+cx+'" y="'+(H-4)+'" text-anchor="middle" font-size="8" font-family="Sora,sans-serif" fill="#94a3b8">'+d.a+'</text>';});var spark='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block;">'+svgContent+'</svg>';return'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;"><div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">'+titulo+'</div><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px;"><div><div style="font-size:26px;font-weight:700;color:#1e293b;line-height:1;">'+avFmt(ultimo.v)+'</div><div style="font-size:10px;color:#94a3b8;margin-top:3px;">'+ultimo.a+(primero.a!==ultimo.a?' · antes: '+avFmt(primero.v):'')+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;"><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:'+diffBg+';color:'+diffCol+';">'+diffStr+'</span>'+spark+'</div></div></div>';}function graficoArea(titulo,valores,colorArea,colorLinea,fmt){if(!valores||valores.length<2)return'';var ultimo=valores[valores.length-1];var primero=valores[0];var diff=primero.v>0?((ultimo.v-primero.v)/primero.v*100):0;var diffStr=(diff>=0?'▲ +':'▼ ')+Math.abs(diff).toFixed(1)+'%';var diffCol=diff>=0?'#16a34a':'#dc2626';var diffBg=diff>=0?'#dcfce7':'#fee2e2';var ultimoStr=fmt?fmt(ultimo.v):ultimo.v.toFixed(1).replace('.',',')+'%';var primeroStr=fmt?fmt(primero.v):primero.v.toFixed(1).replace('.',',')+'%';var W=160,H=70,PL=14,PR=14,n=valores.length;var vals=valores.map(function(x){return x.v;});var minV=Math.min.apply(null,vals),maxV=Math.max.apply(null,vals);var rng=maxV-minV||0.01;function px(i){return PL+Math.round(i/(n-1)*(W-PL-PR));}function py(v){return 8+Math.round((1-(v-minV)/rng)*(H-30));}var pts=valores.map(function(d,i){return px(i)+','+py(d.v);}).join(' ');var poly=px(0)+','+(H-18)+' '+pts+' '+px(n-1)+','+(H-18);var gradId='sg'+titulo.replace(/[^a-zA-Z0-9]/g,'');var svgContent='<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+colorLinea+'" stop-opacity="0.3"/><stop offset="100%" stop-color="'+colorLinea+'" stop-opacity="0.02"/></linearGradient></defs><polygon points="'+poly+'" fill="url(#'+gradId+')"/><polyline points="'+pts+'" fill="none" stroke="'+colorLinea+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';valores.forEach(function(d,i){var cx=px(i),cy=py(d.v);svgContent+='<circle cx="'+cx+'" cy="'+cy+'" r="3" fill="'+colorLinea+'" stroke="white" stroke-width="1.5"/><text x="'+cx+'" y="'+(H-4)+'" text-anchor="middle" font-size="8" font-family="Sora,sans-serif" fill="#94a3b8">'+d.a+'</text>';});var spark='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block;">'+svgContent+'</svg>';return'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;"><div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">'+titulo+'</div><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px;"><div><div style="font-size:26px;font-weight:700;color:#1e293b;line-height:1;">'+ultimoStr+'</div><div style="font-size:10px;color:#94a3b8;margin-top:3px;">'+ultimo.a+(primero.a!==ultimo.a?' · antes: '+primeroStr:'')+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;"><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:'+diffBg+';color:'+diffCol+';">'+diffStr+'</span>'+spark+'</div></div></div>';}var dPob=aC.map(function(a){return{a:a,v:pA[a].total_pers};});var dViv=aC.map(function(a){return{a:a,v:pA[a].total_vivi};});var dPctJov=aC.map(function(a){var t=pA[a].total_pers||1;return{a:a,v:pA[a].jov/t*100};});var dPctMay=aC.map(function(a){var t=pA[a].total_pers||1;return{a:a,v:pA[a].may/t*100};});var dIdxEnv=aC.map(function(a){var j=pA[a].jov||1;return{a:a,v:pA[a].may/j*100};});var fmtPct=function(v){return v.toFixed(1).replace('.',',')+'%';};var fmtIdx=function(v){return v.toFixed(1).replace('.',',');};var css='<style>.evol-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}</style>';var g1=graficoBars('Población censada',dPob,'#e91e8c','#e8b4d0');var g2=graficoArea('% personas 0 a 14 años',dPctJov,'#b8cce8','#1d4ed8',fmtPct);var g3=graficoBars('Viviendas censadas',dViv,'#3b5fa0','#8da9cc');var g4=graficoArea('% personas 60 años o más',dPctMay,'#2a4aa0','#e91e8c',fmtPct);var dMuj=aC.map(function(a){return{a:a,v:pA[a].mujeres};});var g7=graficoBars('Mujeres censadas',dMuj,'#be185d','#f9a8d4');var g6=graficoArea('Índice de envejecimiento',dIdxEnv,'#2a4aa0','#e91e8c',fmtIdx);var row1='<div class="evol-grid">'+g1+g2+g3+'</div>';var row2='<div class="evol-grid" style="margin-top:12px;">'+g4+g7+g6+'</div>';var dH2='';for(var i=1;i<aC.length;i++){var a1=aC[i-1],a2=aC[i];var dp=pA[a1].total_pers>0?((pA[a2].total_pers-pA[a1].total_pers)/pA[a1].total_pers*100).toFixed(1):'—';var dv=pA[a1].total_vivi>0?((pA[a2].total_vivi-pA[a1].total_vivi)/pA[a1].total_vivi*100).toFixed(1):'—';var colP=Number(dp)>=0?'#16a34a':'#dc2626',arP=Number(dp)>=0?'▲':'▼';var colV=Number(dv)>=0?'#16a34a':'#dc2626',arV=Number(dv)>=0?'▲':'▼';dH2+='<div style="display:flex;gap:16px;align-items:center;padding:9px 0;border-bottom:1px solid #e2e8f0;font-size:13px;flex-wrap:wrap;"><div style="width:90px;color:#64748b;font-weight:600;">'+a1+' → '+a2+'</div><div>Población: <span style="color:'+colP+';font-weight:700;">'+arP+' '+dp+'%</span> <span style="color:#94a3b8;">('+avFmt(pA[a2].total_pers-pA[a1].total_pers)+')</span></div><div>Viviendas: <span style="color:'+colV+';font-weight:700;">'+arV+' '+dv+'%</span> <span style="color:#94a3b8;">('+avFmt(pA[a2].total_vivi-pA[a1].total_vivi)+')</span></div></div>';}
+  if(av2.searchId!==sid)return;
+  if(eC)eC.innerHTML=css+row1+row2+'<div class="av2-card" style="margin-top:14px;"><div class="ctitle">Variación intercensal</div>'+(dH2||'<div style="color:#94a3b8;font-size:12px;">Sin suficientes años para comparar.</div>')+'</div>';
+  if(eL)eL.style.display='none';
+  if(eC)eC.style.display='block';
+  }catch(e){if(eL)eL.innerHTML='<div style="color:#dc2626;font-size:13px;">Error: '+e.message+'</div>';}}
+
 
 function mostrarBotonAnalytics(){
   analyticsVisible=false;
@@ -1241,7 +1558,7 @@ function mostrarViz(sectores){
     ui.appendChild(btn);
   });
   if(mbMap){mbMap.remove();mbMap=null;mbInited=false;}
-  initMapbox(sectores,0);mostrarPanel(sectores,0);initLeaflet();actualizarMapa2d(sectores);
+  initMapbox(sectores,0);initLeaflet();actualizarMapa2d(sectores);
 }
 function ocultarViz(){document.getElementById("viz-wrapper").style.display="none";}
 
@@ -1255,13 +1572,30 @@ function calcularCentro(sector){
 
 function initMapbox(sectores,idxActivo){mbInited=true;var centro=calcularCentro(sectores[idxActivo]);mbMap=new mapboxgl.Map({container:"mapbox-map",style:"mapbox://styles/mapbox/satellite-streets-v12",center:centro,zoom:1,pitch:0,bearing:0,antialias:true});mbMap._sectoresPendientes=sectores;mbMap.on("load",function(){var map=this,sects=map._sectoresPendientes;map.addSource("mapbox-dem",{type:"raster-dem",url:"mapbox://mapbox.mapbox-terrain-dem-v1",tileSize:512,maxzoom:14});map.setTerrain({source:"mapbox-dem",exaggeration:1.5});map.setFog({color:"rgb(180,210,240)","high-color":"rgb(100,160,220)","horizon-blend":0.08,"space-color":"rgb(30,50,100)","star-intensity":0.1});var layers=map.getStyle().layers,labelLayerId;for(var i=0;i<layers.length;i++){if(layers[i].type==="symbol"&&layers[i].layout&&layers[i].layout["text-field"]){labelLayerId=layers[i].id;break;}}map.addLayer({id:"edificios-3d",source:"composite","source-layer":"building",filter:["==","extrude","true"],type:"fill-extrusion",minzoom:14,paint:{"fill-extrusion-color":"#d6cfc8","fill-extrusion-height":["interpolate",["linear"],["zoom"],14,0,14.5,["get","height"]],"fill-extrusion-base":["interpolate",["linear"],["zoom"],14,0,14.5,["get","min_height"]],"fill-extrusion-opacity":0.80,"fill-extrusion-ambient-occlusion-intensity":0.45,"fill-extrusion-ambient-occlusion-radius":3.0}},labelLayerId);agregarCapasOMZ(map,sects);map.flyTo({center:calcularCentro(sects[sectorActivo]),zoom:15.2,pitch:68,bearing:-15,duration:5500,curve:3.5,easing:function(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}});});}
 
-function agregarCapasOMZ(map,sectores){var features=sectores.filter(function(s){return s.coordsMapbox&&s.coordsMapbox.length>=3&&s.coordsMapbox.every(function(c){return!isNaN(c[0])&&!isNaN(c[1])&&isFinite(c[0])&&isFinite(c[1]);})}).map(function(s,i){return{type:"Feature",properties:{idx:i,color:PALETA[s.colIdx].hex,activo:i===sectorActivo},geometry:{type:"Polygon",coordinates:[s.coordsMapbox]}};});if(!features.length){console.warn("Sin coordenadas válidas.");return;}map.addSource("omz-source",{type:"geojson",data:{type:"FeatureCollection",features:features}});var colorTecho="#94a3b8";map.addLayer({id:"edificios-techos",source:"composite","source-layer":"building",filter:["==","extrude","true"],type:"fill-extrusion",minzoom:14,paint:{"fill-extrusion-color":colorTecho,"fill-extrusion-height":["interpolate",["linear"],["zoom"],14,0,14.5,["get","height"]],"fill-extrusion-base":["interpolate",["linear"],["zoom"],14.4,["*",0.95,["get","height"]],14.5,["*",0.95,["get","height"]]],"fill-extrusion-opacity":0.85}});map.addLayer({id:"omz-line",source:"omz-source",type:"line",paint:{"line-color":["get","color"],"line-width":3,"line-opacity":1.0}});map.on("click","omz-line",function(e){if(e.features&&e.features[0])seleccionarSector(e.features[0].properties.idx);});map.on("mouseenter","omz-line",function(){map.getCanvas().style.cursor="pointer";});map.on("mouseleave","omz-line",function(){map.getCanvas().style.cursor="";});}
+function agregarCapasOMZ(map,sectores){var features=sectores.filter(function(s){return s.coordsMapbox&&s.coordsMapbox.length>=3&&s.coordsMapbox.every(function(c){return!isNaN(c[0])&&!isNaN(c[1])&&isFinite(c[0])&&isFinite(c[1]);})}).map(function(s,i){return{type:"Feature",properties:{idx:i,color:PALETA[s.colIdx].hex,activo:i===sectorActivo},geometry:{type:"Polygon",coordinates:[s.coordsMapbox]}};});if(!features.length){console.warn("Sin coordenadas válidas.");return;}map.addSource("omz-source",{type:"geojson",data:{type:"FeatureCollection",features:features}});var colorTecho="#94a3b8";map.addLayer({id:"edificios-techos",source:"composite","source-layer":"building",filter:["==","extrude","true"],type:"fill-extrusion",minzoom:14,paint:{"fill-extrusion-color":colorTecho,"fill-extrusion-height":["interpolate",["linear"],["zoom"],14,0,14.5,["get","height"]],"fill-extrusion-base":["interpolate",["linear"],["zoom"],14.4,["*",0.95,["get","height"]],14.5,["*",0.95,["get","height"]]],"fill-extrusion-opacity":0.85}});map.addLayer({
+  id:"omz-fill",
+  source:"omz-source",
+  type:"fill",
+  paint:{
+    "fill-color":["get","color"],
+    "fill-opacity":0.15
+  }
+});
+map.addLayer({
+  id:"omz-line",
+  source:"omz-source",
+  type:"line",
+  paint:{
+    "line-color":["get","color"],
+    "line-width":3,
+    "line-opacity":1.0
+  }
+});map.on("click","omz-line",function(e){if(e.features&&e.features[0])seleccionarSector(e.features[0].properties.idx);});map.on("mouseenter","omz-line",function(){map.getCanvas().style.cursor="pointer";});map.on("mouseleave","omz-line",function(){map.getCanvas().style.cursor="";});}
 
 function actualizarCapasMapbox(sectores){if(!mbMap||!mbMap.isStyleLoaded())return;var src=mbMap.getSource("omz-source");if(!src)return;var features=sectores.filter(function(s){return s.coordsMapbox&&s.coordsMapbox.length>=3&&s.coordsMapbox.every(function(c){return!isNaN(c[0])&&!isNaN(c[1])&&isFinite(c[0])&&isFinite(c[1]);})}).map(function(s,i){return{type:"Feature",properties:{idx:i,color:PALETA[s.colIdx].hex,activo:i===sectorActivo},geometry:{type:"Polygon",coordinates:[s.coordsMapbox]}};});src.setData({type:"FeatureCollection",features:features});}
 
-function seleccionarSector(idx){sectorActivo=idx;document.querySelectorAll(".btn-sector3d").forEach(function(b,i){b.classList.toggle("active",i===idx);});actualizarCapasMapbox(sectoresActivos);mbMap.flyTo({center:calcularCentro(sectoresActivos[idx]),zoom:15.2,pitch:68,bearing:-15,duration:2800,curve:2.0,easing:function(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}});mostrarPanel(sectoresActivos,idx);}
+function seleccionarSector(idx){sectorActivo=idx;document.querySelectorAll(".btn-sector3d").forEach(function(b,i){b.classList.toggle("active",i===idx);});actualizarCapasMapbox(sectoresActivos);mbMap.flyTo({center:calcularCentro(sectoresActivos[idx]),zoom:15.2,pitch:68,bearing:-15,duration:2800,curve:2.0,easing:function(t){return t<0.5?2*t*t:-1+(4-2*t)*t;}});}
 
-function mostrarPanel(sectores,idx){var s=sectores[idx];if(!s)return;document.getElementById("cp-nombre").textContent=s.nombre;document.getElementById("cp-pob").textContent=Number(s.datos.pob).toLocaleString("es-CL");document.getElementById("cp-viv").textContent=Number(s.datos.viv).toLocaleString("es-CL");document.getElementById("cp-hom").textContent=Number(s.datos.hom).toLocaleString("es-CL");document.getElementById("cp-muj").textContent=Number(s.datos.muj).toLocaleString("es-CL");var p=document.getElementById("ciudad-panel");p.classList.remove("on");setTimeout(function(){p.classList.add("on");},500);}
 
 function initLeaflet(){if(mapaLeaflet){setTimeout(function(){mapaLeaflet.invalidateSize();},300);return;}mapaLeaflet=L.map("leaf-map",{center:[-33.045,-71.590],zoom:13});L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{attribution:"© OpenStreetMap © CARTO",subdomains:"abcd",maxZoom:19}).addTo(mapaLeaflet);}
 function actualizarMapa2d(sectores){leafPolys.forEach(function(p){mapaLeaflet.removeLayer(p);});leafPolys=[];var bounds=[];sectores.forEach(function(s){if(!s.coordsLeaf||!s.coordsLeaf.length)return;var col=PALETA[s.colIdx].leaf;var poly=L.polygon(s.coordsLeaf,{color:col,weight:2.5,opacity:.9,fillColor:col,fillOpacity:.18}).addTo(mapaLeaflet);poly.bindTooltip(s.nombre,{sticky:true,className:"leaflet-tooltip-clara"});leafPolys.push(poly);s.coordsLeaf.forEach(function(c){bounds.push(c);});});if(bounds.length)mapaLeaflet.fitBounds(bounds,{padding:[30,30],maxZoom:15});setTimeout(function(){mapaLeaflet.invalidateSize();},200);setTimeout(function(){mapaLeaflet.invalidateSize();},700);}
@@ -1279,11 +1613,11 @@ function renderTabla(data,metricas){
   });
 }
 
-document.getElementById("btn-exportar").addEventListener("click",function(){
+{% comment %} document.getElementById("btn-exportar").addEventListener("click",function(){
   var rows=[];
   document.querySelectorAll("#tabla-resultados tr").forEach(function(tr){rows.push(Array.from(tr.children).map(function(td){return'"'+td.innerText.replace(/"/g,'""')+'"';}).join(";"));});
   var a=Object.assign(document.createElement("a"),{href:URL.createObjectURL(new Blob([rows.join("\n")],{type:"text/csv"})),download:"censo.csv"});a.click();
-});
+}); {% endcomment %}
 document.getElementById("btn-select-all").onclick  =function(){document.querySelectorAll(".m-check").forEach(function(c){c.checked=true;});};
 document.getElementById("btn-unselect-all").onclick=function(){document.querySelectorAll(".m-check").forEach(function(c){c.checked=false;});};
 
@@ -1529,3 +1863,4 @@ renderTabIndicadores = function() {
 
 </body>
 </html>
+
