@@ -11,6 +11,42 @@
   
 
   <style>
+  @media (max-width: 768px) {
+  body { padding-top: 10px !important; padding-left: 8px !important; padding-right: 8px !important; }
+  .logo-sig { width: 180px !important; }
+  .volver-btn { display: none !important; }
+  #btn-colapsar { display: none !important; }
+  #btn-abrir-sidebar { display: none !important; }
+  .sidebar { padding: 14px 12px !important; }
+
+  /* Tabla móvil */
+  .content-card { padding: 10px 8px !important; border-radius: 12px !important; overflow: hidden !important; }
+  #tabla-wrap { max-height: none !important; overflow-x: auto !important; overflow-y: auto !important; border-radius: 10px !important; }
+  table { font-size: 11px !important; min-width: 100% !important; }
+  thead th { font-size: 10px !important; padding: 8px 6px !important; white-space: nowrap !important; position: sticky !important; top: 0 !important; background: white !important; z-index: 10 !important; }
+  tbody td { padding: 8px 6px !important; white-space: nowrap !important; }
+  #results-header { flex-direction: row !important; align-items: center !important; margin-bottom: 10px !important; gap: 6px !important; }
+  #results-header h4 { font-size: 15px !important; }
+
+  /* Mapas */
+  #ciudad3d-wrap { height: 240px !important; }
+  #leaf-wrap { height: 220px !important; }
+
+  /* Analytics */
+  .av2-tab-btn { font-size: 10px !important; padding: 10px 3px !important; }
+  #ind-kpi-row { grid-template-columns: 1fr 1fr !important; }
+  #ind-row3 { grid-template-columns: 1fr !important; }
+  .evol-grid { grid-template-columns: 1fr !important; }
+  #metricas-box { max-height: 160px !important; }
+  #categorias-wrap { grid-template-columns: 1fr 1fr !important; }
+  #empty-state-panel { padding: 30px 16px !important; min-height: 200px !important; }
+}
+
+@media (max-width: 400px) {
+  .logo-sig { width: 140px !important; }
+  #ciudad3d-wrap { height: 200px !important; }
+  .av2-tab-btn { font-size: 9px !important; padding: 8px 2px !important; }
+}
   @media screen and (max-width: 768px) {
   .row.g-3 {
     display: flex !important;
