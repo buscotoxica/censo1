@@ -7,7 +7,7 @@ class Omz(models.Model):
 
     class Meta:
         db_table = 'omz'
-        managed = False
+        managed = True
 
     def __str__(self):
         return self.nombre
@@ -21,7 +21,7 @@ class Sb(models.Model):
 
     class Meta:
         db_table = 'sb'
-        managed = False
+        managed = True
 
     def __str__(self):
         return self.nombre
@@ -34,7 +34,7 @@ class Uv(models.Model):
 
     class Meta:
         db_table = 'uv'
-        managed = False
+        managed = True
 
     def __str__(self):
         return self.cod_uv
@@ -46,7 +46,7 @@ class Censo(models.Model):
 
     class Meta:
         db_table = 'censo'
-        managed = False
+        managed = True
 
     def __str__(self):
         return str(self.annio)
@@ -205,7 +205,7 @@ class CensoUv(models.Model):
     
     class Meta:
         db_table = 'censo_uv'
-        managed = False
+        managed = True
 
 class RegistroConsulta(models.Model):
     microservicio = models.CharField(max_length=100)
@@ -215,7 +215,7 @@ class RegistroConsulta(models.Model):
 
     class Meta:
         db_table = 'registro_consulta'
-        managed = False
+        managed = True
 
     def __str__(self):
         return f"{self.microservicio} - {self.fecha_consulta:%Y-%m-%d %H:%M}"
